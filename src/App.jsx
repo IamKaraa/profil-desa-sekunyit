@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, MapPin, Mail, Phone } from 'lucide-react';
+import { Menu, X, MapPin, Mail, Phone, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from './config/supabaseClient'; 
 
 const FacebookIcon = ({ size = 24 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>);
 const TwitterIcon = ({ size = 24 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>);
@@ -46,8 +48,14 @@ const FadeInOnScroll = ({ children, delay = 0, className = "" }) => {
 };
 
 export default function App() {
+  const navigate = useNavigate(); 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // State untuk menampung Data Dashboard
+  const [infoTerbaru, setInfoTerbaru] = useState([]);
+  const [potensiTerbaru, setPotensiTerbaru] = useState([]);
+  const [galeriTerbaru, setGaleriTerbaru] = useState([]); // State Baru untuk Galeri
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,11 +66,64 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // 1. Tarik Data Informasi
+        const { data: infoData, error: infoError } = await supabase
+          .from('informasi_desa')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(4);
+        if (infoError) throw infoError;
+        setInfoTerbaru(infoData || []);
+
+        // 2. Tarik Data Potensi
+        const { data: potensiData, error: potensiError } = await supabase
+          .from('potensi_desa')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(3);
+        if (potensiError) throw potensiError;
+        setPotensiTerbaru(potensiData || []);
+
+        // 3. Tarik Data Galeri & Gabungkan dengan Informasi yang ada gambarnya
+        const { data: resGaleri, error: galeriError } = await supabase
+          .from('galeri_desa')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (galeriError) throw galeriError;
+
+        const galeriMurni = (resGaleri || []).map(g => ({ ...g, source: 'galeri' }));
+        const galeriDariInfo = (infoData || [])
+          .filter(info => info.gambar)
+          .map(info => ({
+            id: `info-${info.id}`,
+            judul_kegiatan: info.judul,
+            gambar_urls: [info.gambar],
+            created_at: info.created_at,
+            source: 'informasi'
+          }));
+
+        // Gabungkan, urutkan terbaru, dan ambil hanya 4 untuk ditampilkan di Beranda
+        const combinedGaleri = [...galeriMurni, ...galeriDariInfo]
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 4); 
+
+        setGaleriTerbaru(combinedGaleri);
+
+      } catch (err) {
+        console.error("Gagal menarik data beranda:", err.message);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
   return (
     <div className="font-inter text-gray-800 bg-slate-50 min-h-screen overflow-x-hidden">
-      {/* Import Font Kustom */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@300;400;500;600&display=swap');
+        html { scroll-behavior: smooth; }
         .font-montserrat { font-family: 'Montserrat', sans-serif; }
         .font-poppins { font-family: 'Poppins', sans-serif; }
         .font-inter { font-family: 'Inter', sans-serif; }
@@ -86,7 +147,7 @@ export default function App() {
             <a href="#potensi" className="hover:text-gray-300 transition-colors">Potensi Desa</a>
             <a href="#informasi" className="hover:text-gray-300 transition-colors">Informasi</a>
             <a href="#galeri" className="hover:text-gray-300 transition-colors">Galeri</a>
-            <a href="#ajuadu" className="hover:text-gray-300 transition-colors">Aju/Adu</a>
+            <a href="/aduan-warga" className="hover:text-gray-300 transition-colors">Adu</a>
           </div>
 
           <div className="md:hidden">
@@ -108,27 +169,17 @@ export default function App() {
 
       {/* --- HERO SECTION --- */}
       <section id="beranda" className="relative h-screen flex items-center justify-center">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url("/Foto/IMG_4424.jpg")' }}
-        >
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url("/Foto/IMG_4424.jpg")' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-zinc-900"></div>
         </div>
 
         <div className="relative z-10 container mx-auto px-6 md:px-12 flex flex-col justify-center h-full pt-20">
-          <FadeInOnScroll delay={100}>
-            <p className="text-white font-montserrat tracking-[0.2em] md:tracking-[0.3em] uppercase text-2xl md:text-2xl mb-2">Selamat Datang</p>
-          </FadeInOnScroll>
-          <FadeInOnScroll delay={300}>
-            <h1 className="text-white font-montserrat font-bold text-5xl md:text-7xl lg:text-8xl tracking-tight leading-none mb-8">
-              DESA SEKUNYIT
-            </h1>
-          </FadeInOnScroll>
-          
+          <FadeInOnScroll delay={100}><p className="text-white font-montserrat tracking-[0.2em] md:tracking-[0.3em] uppercase text-2xl md:text-2xl mb-2">Selamat Datang</p></FadeInOnScroll>
+          <FadeInOnScroll delay={300}><h1 className="text-white font-montserrat font-bold text-5xl md:text-7xl lg:text-8xl tracking-tight leading-none mb-8">DESA SEKUNYIT</h1></FadeInOnScroll>
           <FadeInOnScroll delay={500} className="self-end md:w-1/3 mt-20 hidden md:block">
             <p className="text-gray-200 text-xl md:text-lg font-inter text-left border-l-2 border-white pl-4">
-              Selamat datang di Dusun Sekunyit. <br/>Laman ini nyediakah kabar ngan informasi keliling dusun, serte tempat nduk nyampaikah ajuan ngan pengaduan dusun.
-            </p>
+              Selamat datang di Desa Sekunyit. <br/>Halaman ini menyediakan informasi seputar desa, serta tempat untuk menyampaikan pengaduan desa.
+            </p> 
           </FadeInOnScroll>
         </div>
       </section>
@@ -137,7 +188,7 @@ export default function App() {
       <section id="profil" className="bg-zinc-900 text-gray-300 py-30 px-6 md:px-12">
         <div className="container mx-auto max-w-6xl">
           <FadeInOnScroll>
-            <div className="flex flex-col items-center mb-16">
+            <div className="flex flex-col items-center mb-16 mt-20">
               <h2 className="text-white font-montserrat font-bold text-2xl md:text-3xl uppercase tracking-wider mb-2">Desa Sekunyit</h2>
               <div className="w-100 h-1 bg-white"></div>
             </div>
@@ -162,16 +213,23 @@ export default function App() {
               </FadeInOnScroll>
             </div>
             
-            <FadeInOnScroll delay={400} className="md:w-1/3 w-full flex justify-center">
-              <div className="bg-white w-full max-w-[300px] aspect-square rounded-sm flex items-center justify-center text-gray-400 font-poppins shadow-2xl">
-                <span>logo desa</span>
+            <FadeInOnScroll delay={400} className="md:w-1/3 w-full flex justify-center pb-20">
+              <div 
+                className="bg-transparent size-full aspect-square rounded-sm flex items-center justify-center"
+                style={{ 
+                    backgroundImage: 'url("/Foto/KabupatenKaur.png")', 
+                    backgroundSize: 'contain', 
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
+                >
               </div>
             </FadeInOnScroll>
           </div>
         </div>
       </section>
 
-      {}
+      {/* --- Peta Desa --- */}
       <section className="bg-slate-50 py-20 px-6 md:px-12 border-t-4 border-zinc-900">
         <div className="container mx-auto max-w-5xl">
           <FadeInOnScroll>
@@ -186,8 +244,8 @@ export default function App() {
         </div>
       </section>
 
-      {}
-      <section id="seputar" className="bg-slate-50 py-30 px-6 md:px-12 pb-24">
+      {/* --- Seputar Desa --- */}
+      <section id="seputar" className="bg-slate-50 py-30 px-6 md:px-12 pb-24 mt-20">
         <div className="container mx-auto max-w-4xl">
           <FadeInOnScroll>
             <div className="flex flex-col items-center mb-12">
@@ -195,100 +253,193 @@ export default function App() {
               <div className="w-16 h-1 bg-zinc-900"></div>
             </div>
           </FadeInOnScroll>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {["Struktur Desa", "Visi dan Misi Desa", "Tujuan Desa", "Data Kependudukan", "Potensi Desa", "Data Pembangunan", "Kontak Penting", "Geologis Desa", "Adat dan Budaya"].map((item, index) => (
-              <FadeInOnScroll key={index} delay={index * 50}>
-                <button className="w-full bg-zinc-900 text-white font-poppins text-sm py-4 px-4 rounded shadow-md hover:bg-zinc-800 hover:-translate-y-1 transition-all duration-300 text-center">{item}</button>
-              </FadeInOnScroll>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+            {[
+                { label: "Struktur Desa", path: "/struktur-organisasi" },
+                { label: "Visi dan Misi Desa", path: "/visi-misi" },
+                { label: "Tujuan Desa", path: "/visi-misi" }, // Tujuan digabung ke halaman Visi Misi
+                { label: "Data Kependudukan", path: "/data-kependudukan" },
+                { label: "Potensi Desa", path: "/potensi-desa" },
+                { label: "Data Pembangunan", path: "/data-bangunan" },
+                { label: "Kontak Penting", path: "/kontak-penting" },
+                { label: "Geologis Desa", path: "/geologi-desa" },
+                { label: "Adat dan Budaya", path: "/adat-budaya" }
+            ].map((item, index) => (
+                <FadeInOnScroll key={index} delay={index * 50}>
+                <button 
+                    onClick={() => navigate(item.path)}
+                    className="w-full bg-zinc-900 text-white font-poppins text-sm py-4 px-4 rounded shadow-md hover:bg-zinc-800 hover:-translate-y-1 transition-all duration-300 text-center"
+                >
+                    {item.label}
+                </button>
+                </FadeInOnScroll>
             ))}
           </div>
         </div>
       </section>
 
-      {}
+      {/* --- POTENSI DESA --- */}
       <section id="potensi" className="relative py-30 px-6 md:px-12 bg-zinc-900 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40" style={{ backgroundImage: 'url("Foto/IMG_4725.jpg")', filter: 'blur(2px)' }}></div>
-        <div className="container mx-auto max-w-5xl relative z-10">
+        <div className="container mx-auto max-w-5xl relative z-10 pt-20">
           <FadeInOnScroll>
             <div className="flex flex-col items-center mb-12">
               <h2 className="text-white font-montserrat font-bold text-xl md:text-2xl uppercase tracking-wider mb-2">Potensi Desa Sekunyit</h2>
             </div>
           </FadeInOnScroll>
           <FadeInOnScroll delay={200}>
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border border-white/20 shadow-2xl">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border border-white/20 shadow-2xl mb-20">
               <div className="md:w-1/3 flex flex-col justify-center">
-                <p className="text-white font-inter text-sm md:text-base leading-relaxed">Desa Sekunyit memiliki beberapa spot wisata yang dapat memanjakan mata, dikelilingi oleh indahnya hamparan karang dan laut surut...</p>
-                <button className="mt-6 self-start text-xs font-poppins bg-white text-zinc-900 px-4 py-2 rounded-full font-semibold hover:bg-gray-200 transition-colors">Lihat Selengkapnya</button>
+                <p className="text-white font-inter text-sm md:text-base leading-relaxed">
+                  Desa Sekunyit memiliki beberapa spot wisata dan potensi yang menjanjikan, dikelilingi oleh indahnya hamparan karang laut, kekayaan maritim, hingga UMKM kreatif warga setempat.
+                </p>
+                <button onClick={() => navigate('/potensi-desa')} className="mt-6 self-start text-xs font-poppins bg-white text-zinc-900 px-6 py-2.5 rounded-full font-semibold hover:bg-gray-200 transition-colors">
+                  Lihat Selengkapnya
+                </button>
               </div>
-              <div className="md:w-2/3 grid grid-cols-3 gap-2 md:gap-4">
-                <div className="bg-gray-200/90 rounded-lg aspect-[1/2] animate-pulse"></div>
-                <div className="bg-gray-300/90 rounded-lg aspect-[1/2] animate-pulse" style={{ animationDelay: '150ms' }}></div>
-                <div className="bg-gray-200/90 rounded-lg aspect-[1/2] animate-pulse" style={{ animationDelay: '300ms' }}></div>
+              <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
+                {potensiTerbaru.length === 0 ? (
+                  <div className="col-span-3 text-center text-white/50 text-sm py-10 font-inter border border-dashed border-white/20 rounded-lg">Belum ada potensi terdaftar.</div>
+                ) : (
+                  potensiTerbaru.map((potensi, index) => {
+                    const imgCover = potensi.gambar_urls && potensi.gambar_urls.length > 0 ? potensi.gambar_urls[0] : potensi.gambar;
+                    return (
+                      <div 
+                        key={potensi.id} 
+                        onClick={() => navigate('/potensi-desa')}
+                        className="bg-zinc-800/90 rounded-lg aspect-[1/2] sm:aspect-auto sm:h-full bg-cover bg-center cursor-pointer hover:scale-[1.03] transition-transform overflow-hidden relative group"
+                        style={{ backgroundImage: imgCover ? `url(${imgCover})` : 'none', animationDelay: `${index * 150}ms` }}
+                      >
+                        {!imgCover && <div className="absolute inset-0 flex items-center justify-center text-white/40 text-xs">Tanpa Gambar</div>}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                          <span className="text-white font-montserrat font-bold text-sm leading-tight line-clamp-3">{potensi.judul}</span>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
           </FadeInOnScroll>
         </div>
       </section>
 
-      {}
+      {/* --- INFORMASI DESA --- */}
       <section id="informasi" className="bg-zinc-950 py-30 px-6 md:px-12 border-t border-zinc-800">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-6xl pt-20">
           <FadeInOnScroll>
             <div className="flex flex-col items-center mb-12">
               <h2 className="text-white font-montserrat font-bold text-xl md:text-2xl uppercase tracking-wider mb-2">Informasi Desa</h2>
             </div>
           </FadeInOnScroll>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((item, index) => (
-              <FadeInOnScroll key={index} delay={index * 100}>
-                <div className="bg-zinc-800 aspect-square rounded-xl hover:scale-105 transition-transform duration-300 cursor-pointer overflow-hidden border border-zinc-700 relative group">
-                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity duration-300">
-                      <span className="text-white font-poppins text-sm">Lihat Foto</span>
-                   </div>
-                </div>
-              </FadeInOnScroll>
-            ))}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-10">
+            {infoTerbaru.length === 0 ? (
+               <div className="col-span-full text-center text-zinc-500 text-sm py-10 font-inter">Belum ada informasi yang dipublikasikan.</div>
+            ) : (
+              infoTerbaru.map((item, index) => (
+                <FadeInOnScroll key={item.id} delay={index * 100}>
+                  <div 
+                    onClick={() => navigate(`/informasi/${item.id}`)}
+                    className="bg-zinc-800 aspect-square rounded-xl hover:scale-105 transition-transform duration-300 cursor-pointer overflow-hidden border border-zinc-700 relative group bg-cover bg-center"
+                    style={{ backgroundImage: item.gambar ? `url(${item.gambar})` : 'none' }}
+                  >
+                     {!item.gambar && (
+                       <div className="absolute inset-0 flex items-center justify-center p-4">
+                         <span className="text-zinc-500 font-poppins text-xs font-semibold text-center line-clamp-3">{item.judul}</span>
+                       </div>
+                     )}
+                     
+                     <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-black/80 transition-opacity duration-300 p-3 text-center gap-2">
+                        <span className="text-white font-poppins text-sm md:text-base font-bold line-clamp-2 leading-tight">{item.judul}</span>
+                        <span className="text-gray-300 font-poppins text-[10px] uppercase tracking-wider">Baca Selengkapnya</span>
+                     </div>
+                  </div>
+                </FadeInOnScroll>
+              ))
+            )}
           </div>
+
           <FadeInOnScroll delay={100}>
-            <button className="relative mt-6 self-start text-xs font-poppins border-2 border-white bg-transparent text-white px-4 py-2 rounded-full font-semibold hover:bg-white hover:text-zinc-900 transition-colors">Lihat Selengkapnya</button>
+            <button 
+              onClick={() => navigate('/informasi-desa')}
+              className="relative mb-20 self-start text-xs font-poppins border-2 border-white bg-transparent text-white px-6 py-2.5 rounded-full font-semibold hover:bg-white hover:text-zinc-900 transition-colors"
+            >
+              Lihat Selengkapnya
+            </button>
           </FadeInOnScroll>
         </div>
       </section>
 
-      {}
+      {/* --- GALERI DESA --- */}
       <section id="galeri" className="bg-zinc-950 py-30 px-6 md:px-12 border-t border-zinc-800">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-6xl pt-20">
           <FadeInOnScroll>
             <div className="flex flex-col items-center mb-12">
               <h2 className="text-white font-montserrat font-bold text-xl md:text-2xl uppercase tracking-wider mb-2">Galeri Desa</h2>
             </div>
           </FadeInOnScroll>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((item, index) => (
-              <FadeInOnScroll key={index} delay={index * 100}>
-                <div className="bg-zinc-800 aspect-square rounded-xl hover:scale-105 transition-transform duration-300 cursor-pointer overflow-hidden border border-zinc-700 relative group">
-                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity duration-300">
-                      <span className="text-white font-poppins text-sm">Lihat Foto</span>
-                   </div>
-                </div>
-              </FadeInOnScroll>
-            ))}
+
+          {/* Render Dinamis Galeri */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-10">
+            {galeriTerbaru.length === 0 ? (
+               <div className="col-span-full text-center text-zinc-500 text-sm py-10 font-inter">Belum ada galeri yang dipublikasikan.</div>
+            ) : (
+              galeriTerbaru.map((item, index) => {
+                const coverImg = item.gambar_urls && item.gambar_urls.length > 0 ? item.gambar_urls[0] : null;
+                return (
+                  <FadeInOnScroll key={item.id} delay={index * 100}>
+                    <div 
+                      onClick={() => navigate('/galeri-desa')}
+                      className="bg-zinc-800 aspect-square rounded-xl hover:scale-105 transition-transform duration-300 cursor-pointer overflow-hidden border border-zinc-700 relative group bg-cover bg-center"
+                      style={coverImg ? { backgroundImage: `url(${coverImg})` } : {}}
+                    >
+                      {!coverImg && (
+                        <div className="absolute inset-0 flex items-center justify-center p-4">
+                          <ImageIcon size={32} className="text-gray-400 opacity-50" />
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity duration-300">
+                        <span className="text-white font-poppins text-sm font-semibold">Lihat Galeri</span>
+                      </div>
+
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 md:p-3">
+                        <p className="text-white text-[10px] md:text-xs font-medium font-inter truncate">{item.judul_kegiatan || 'Dokumentasi'}</p>
+                      </div>
+                    </div>
+                  </FadeInOnScroll>
+                );
+              })
+            )}
           </div>
+
           <FadeInOnScroll delay={100}>
-            <button className="relative mt-6 self-start text-xs font-poppins border-2 border-white bg-transparent text-white px-4 py-2 rounded-full font-semibold hover:bg-white hover:text-zinc-900 transition-colors">Lihat Selengkapnya</button>
+            <button 
+              onClick={() => navigate('/galeri-desa')}
+              className="relative mb-20 self-start text-xs font-poppins border-2 border-white bg-transparent text-white px-6 py-2.5 rounded-full font-semibold hover:bg-white hover:text-zinc-900 transition-colors"
+            >
+              Lihat Selengkapnya
+            </button>
           </FadeInOnScroll>
         </div>
       </section>
 
-      {}
+      {/* --- FOOTER --- */}
       <section className="bg-gradient-to-b from-zinc-950 to-slate-200 py-16 px-6 md:px-12 text-center">
-        <FadeInOnScroll><h3 className="text-zinc-800 font-montserrat font-semibold text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed"><br/><br/><br/><br/> Terima kasih telah berkunjung<br/>kami nantikan kedatanganmu di desa kami!</h3></FadeInOnScroll>
+        <FadeInOnScroll>
+          <h3 className="text-zinc-800 font-montserrat font-semibold text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed">
+            <br/><br/><br/><br/> Terima kasih telah berkunjung<br/>kami nantikan kedatanganmu di desa kami!
+          </h3>
+        </FadeInOnScroll>
       </section>
 
       <footer className="bg-slate-100 text-zinc-600 py-12 px-6 md:px-12 border-t border-gray-300">
         <div className="container mx-auto max-w-6xl flex flex-col md:flex-row justify-between items-start gap-8">
           <div className="flex flex-col md:flex-row gap-6 items-start md:w-1/2">
-            <div className="w-24 h-24 bg-gray-300 rounded-sm flex items-center justify-center shrink-0"><span className="text-xs text-gray-500">Logo</span></div>
+            <div className="w-24 h-24 bg-gray-300 rounded-sm flex items-center justify-center shrink-0">
+              <span className="text-xs text-gray-500">Logo</span>
+            </div>
             <div>
               <h4 className="font-montserrat font-bold text-zinc-800 text-lg mb-2">Desa Sekunyit</h4>
               <p className="font-inter text-sm mb-1 flex items-start gap-2"><MapPin size={16} className="mt-1 shrink-0" /><span>Kec. Kaur Selatan,<br/>Kabupaten Kaur,<br/>Bengkulu</span></p>
@@ -314,7 +465,6 @@ export default function App() {
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-gray-300 text-center font-inter text-xs text-gray-500">
-          {/* <p>© {new Date().getFullYear()} © 2026 KKN Kelompok 205 UNIB X UNILA</p> */}
           <p>© 2026 KKN Kelompok 205 UNIB X UNILA</p>
         </div>
       </footer>
