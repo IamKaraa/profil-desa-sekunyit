@@ -12,8 +12,8 @@ import ProtectedRoute from './components/ProtectedRoute.jsx' // <-- PASTIKAN PAT
 import LoginAdmin from './admin/login-admin.jsx' 
 import DashboardAdmin from './admin/dash-admin.jsx'
 import TambahInformasi from './admin/tambah-informasi.jsx'
-import TambahPotensi from './admin/tambah-potensi'
-import TambahGaleri from './admin/tambah-galeri';
+import TambahPotensi from './admin/tambah-potensi.jsx'
+import TambahGaleri from './admin/tambah-galeri.jsx';
 
 // Import Halaman User
 import AdatBudayaUser from './pages/adat-budaya.jsx'
@@ -27,7 +27,7 @@ import VisiMisi from './pages/visi-misi.jsx'
 import StrukturOrganisasi from './pages/struktur-organisasi.jsx'
 import DataKependudukan from './pages/data-kependudukan.jsx'
 import DataBangunan from './pages/data-bangunan.jsx'
-import PotensiUser from './pages/potensi-desa'
+import PotensiUser from './pages/potensi-desa.jsx'
 import AduanWarga from './pages/aduan-warga.jsx'
 
 import './index.css'
