@@ -6,16 +6,19 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import App from './App.jsx'
 
 // Import Komponen Proteksi Rute Admin
-import ProtectedRoute from './components/ProtectedRoute.jsx' // <-- PASTIKAN PATH INI SESUAI
+import ProtectedRoute from './components/ProtectedRoute.jsx' 
 
-// Import Halaman Login Admin dari folder admin
-import LoginAdmin from './admin/login-admin.jsx' 
-import DashboardAdmin from './admin/dash-admin.jsx'
-import TambahInformasi from './admin/tambah-informasi.jsx'
-import TambahPotensi from './admin/tambah-potensi.jsx'
-import TambahGaleri from './admin/tambah-galeri.jsx';
+// ==========================================================
+// PERBAIKAN DI SINI: Gunakan "./Admin/..." (Huruf A Besar) 
+// dan pastikan semua berakhiran .jsx
+// ==========================================================
+import LoginAdmin from './Admin/login-admin.jsx' 
+import DashboardAdmin from './Admin/dash-admin.jsx'
+import TambahInformasi from './Admin/tambah-informasi.jsx'
+import TambahPotensi from './Admin/tambah-potensi.jsx'
+import TambahGaleri from './Admin/tambah-galeri.jsx'
 
-// Import Halaman User
+// Import Halaman User (Ini sudah aman karena foldernya "pages" huruf kecil)
 import AdatBudayaUser from './pages/adat-budaya.jsx'
 import GaleriUser from './pages/galeri-desa.jsx'
 import InformasiUser from './pages/informasi-desa.jsx'
@@ -27,7 +30,7 @@ import VisiMisi from './pages/visi-misi.jsx'
 import StrukturOrganisasi from './pages/struktur-organisasi.jsx'
 import DataKependudukan from './pages/data-kependudukan.jsx'
 import DataBangunan from './pages/data-bangunan.jsx'
-import PotensiUser from './pages/potensi-desa.jsx'
+import PotensiUser from './pages/potensi-desa.jsx' 
 import AduanWarga from './pages/aduan-warga.jsx'
 
 import './index.css'
@@ -39,7 +42,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         {/* ==============================================================================
             1. RUTE PUBLIK (Bisa Diakses Siapa Saja Tanpa Login)
            ============================================================================== */}
-        {/* Jika URL-nya "/", buka halaman App (Beranda) */}
         <Route path="/" element={<App />} />
         
         {/* Halaman Login Admin */}
