@@ -4,6 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Map, Compass, Layers, Globe, Maximize, MapPin, Tractor, Trees, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../config/supabaseClient';
 
+// --- IMPORT LEAFLET UNTUK PETA INTERAKTIF ---
+import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// --- PERBAIKAN IKON MARKER LEAFLET DI VITE ---
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl,
+});
+
 export default function GeologisUser() {
   const navigate = useNavigate();
 
@@ -18,25 +35,19 @@ export default function GeologisUser() {
     lahan: [], pertanian: [], perkebunan: []
   });
 
-  // Koordinat Peta Interaktif (Google Maps)
-  const mapEmbedUrl = "https://maps.google.com/maps?q=Sekunyit,%20Kaur,%20Bengkulu&t=&z=14&ie=UTF8&iwloc=&output=embed";
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Ambil semua data profil desa sekaligus untuk efisiensi
         const { data, error } = await supabase.from('desa_profil').select('*');
         if (error) throw error;
 
         if (data) {
-          // 1. Ambil foto peta dari kategori 'struktur' (karena admin mengunggahnya di sana)
           const dataStruktur = data.find(d => d.kategori === 'struktur')?.data;
           if (dataStruktur && dataStruktur.peta_desa) {
             setMapImage(dataStruktur.peta_desa);
           }
 
-          // 2. Ambil rincian geografi dari kategori 'geografi'
           const rawGeo = data.find(d => d.kategori === 'geografi')?.data;
           if (rawGeo) {
             setDataGeo({
@@ -62,7 +73,6 @@ export default function GeologisUser() {
   }, []);
 
   // --- LOGIKA MINI CHART PERKEBUNAN ---
-  // Kita konversi string seperti "19 HA" menjadi angka 19 untuk dihitung persentasenya
   const parseNumber = (str) => {
     if (!str) return 0;
     const num = parseFloat(str.replace(/[^0-9,.]/g, '').replace(',', '.'));
@@ -72,11 +82,9 @@ export default function GeologisUser() {
   const parsedPerkebunan = dataGeo.perkebunan
     .map(item => ({ name: item.name, value: parseNumber(item.value) }))
     .filter(item => item.value > 0)
-    .sort((a, b) => b.value - a.value); // Urutkan dari yang terbesar
+    .sort((a, b) => b.value - a.value); 
 
   const totalLuasPerkebunan = parsedPerkebunan.reduce((acc, curr) => acc + curr.value, 0);
-  
-  // Ambil top 3 untuk ditampilkan di grafik, sisanya gabung ke "Lainnya"
   const top3Perkebunan = parsedPerkebunan.slice(0, 3);
   const sisaPerkebunanValue = parsedPerkebunan.slice(3).reduce((acc, curr) => acc + curr.value, 0);
   
@@ -85,25 +93,70 @@ export default function GeologisUser() {
     chartData.push({ name: 'Lainnya', value: sisaPerkebunanValue });
   }
 
-  // Palet warna untuk mini chart (Oranye, Kuning, Hijau, Abu-abu)
   const chartColors = ['bg-orange-500', 'bg-yellow-400', 'bg-emerald-500', 'bg-gray-300'];
+
+  // --- DATA PETA (Koordinat Sesuai Update Anda) ---
+  const mapCenter = [-4.7745, 103.3200]; // Titik tengah peta saat pertama di-load
+  
+  const batasDesaPolygon = [
+    // --- BATAS UTARA (Berbatasan dengan Pengubaian / Sukaraja) ---
+    [-4.774707, 103.316736], // Titik Kiri Atas (Pantai Utara)
+    [-4.773743, 103.317878], // Lekukan Darat Utara
+    [-4.773149, 103.318231], 
+    
+    // --- BATAS TIMUR (Berbatasan dengan Sinar Pagi) ---
+    [-4.773432, 103.320428], // Menikung ke arah Tenggara
+    [-4.773235, 103.322519], // Ujung Timur Terjauh
+    
+    // --- BATAS SELATAN ---
+    [-4.774112, 103.325108], // Menukik kembali ke Selatan
+    [-4.775505, 103.324186],
+    [-4.776218, 103.322680], // Ujung Selatan bertemu Pantai
+    
+    // --- BATAS BARAT (Garis Pantai Samudera Hindia) ---
+    // (Dibuat banyak titik agar melengkung halus menyusuri bibir pantai)
+    [-4.776396, 103.320624],
+    [-4.776729, 103.319393],
+    [-4.776944, 103.318739],
+    [-4.776828, 103.318691],
+    // [-4.775500, 103.316300],
+    // [-4.774000, 103.315900],
+    // [-4.772500, 103.315600],
+    
+    // // Kembali menutup ke titik awal
+    // [-4.771122, 103.315510],
+  ];
+
+  const titikPenting = [
+    { name: "Lapangan Sekunyit", pos: [-4.774424302558211, 103.31975353864716], desc: "Area ruang terbuka." },
+    { name: "Gedung Serba Guna", pos: [-4.773896, 103.319395], desc: "Fasilitas pertemuan warga." },
+    { name: "Puskesmas Pembantu", pos: [-4.773511, 103.319398], desc: "Fasilitas kesehatan desa." },
+    { name: "Gedung Posyandu", pos: [-4.773826, 103.319559], desc: "Pusat pelayanan ibu & anak." },
+    { name: "SD Negeri 58 Kaur", pos: [-4.775663, 103.319153], desc: "Fasilitas pendidikan dasar." },
+    { name: "SMA Negeri 1 Kaur", pos: [-4.775559024602296, 103.32045696671057], desc: "Fasilitas pendidikan menengah." },
+    { name: "Rumah Kepala Desa", pos: [-4.773363, 103.322208], desc: "Kediaman dan pusat koordinasi." },
+    { name: "Masjid Takwa", pos: [-4.774104321411745, 103.32162406047503], desc: "Fasilitas ibadah masyarakat." }
+  ];
 
   return (
     <div className="min-h-screen bg-[#f4f8f9] font-inter pb-20">
       
-      {/* Import Font */}
+      {/* Import Font & Styling Leaflet */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&display=swap');
         .font-montserrat { font-family: 'Montserrat', sans-serif; }
         .font-inter { font-family: 'Inter', sans-serif; }
+        .leaflet-container { z-index: 10 !important; font-family: 'Inter', sans-serif; }
+        .leaflet-popup-content-wrapper { border-radius: 12px; overflow: hidden; padding: 0; }
+        .leaflet-popup-content { margin: 12px; }
       `}} />
 
       {/* --- HEADER DESA --- */}
       <header className="bg-[#111111] text-white h-[70px] flex items-center px-6 md:px-12 sticky top-0 z-40 shadow-md">
         <div className="max-w-5xl mx-auto w-full flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-90">
-                                <ArrowLeft size={20} />
-                              </button>
+            <ArrowLeft size={20} />
+          </button>
           <h1 className="font-montserrat font-semibold text-lg tracking-wide">
             Kondisi Geologis Desa Sekunyit
           </h1>
@@ -113,7 +166,6 @@ export default function GeologisUser() {
       {/* --- MAIN CONTENT --- */}
       <main className="max-w-5xl mx-auto px-6 md:px-12 mt-8 md:mt-12">
         
-        {/* Judul Halaman */}
         <div className="mb-8">
           <motion.h2 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-gray-900 font-montserrat font-bold text-2xl md:text-3xl mb-2">
             Pemetaan Spasial & Geologis
@@ -130,7 +182,6 @@ export default function GeologisUser() {
           </div>
         ) : (
           <>
-            {/* --- KONTEN ATAS (PETA) --- */}
             <div className="flex flex-col gap-8 mb-12">
               
               {/* PETA 1: GAMBAR DARI ADMIN */}
@@ -165,23 +216,69 @@ export default function GeologisUser() {
                 </div>
               </motion.section>
 
-              {/* PETA 2: GOOGLE MAPS INTERAKTIF */}
-              <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col">
+              {/* PETA 2: LEAFLET MAPS INTERAKTIF (SATELLITE VIEW) */}
+              <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col relative z-0">
                 <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-500/20"><Compass size={20} /></div>
                     <div>
-                      <h3 className="font-montserrat font-bold text-gray-900 text-base">Navigasi Peta Digital Interaktif</h3>
-                      <p className="text-gray-400 text-xs font-medium">Terintegrasi langsung dengan Google Maps</p>
+                      <h3 className="font-montserrat font-bold text-gray-900 text-base">Peta Geospasial Satelit</h3>
+                      <p className="text-gray-400 text-xs font-medium">Pemetaan fasilitas dan batas wilayah</p>
                     </div>
                   </div>
                   <span className="bg-green-50 text-green-700 border border-green-200 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 hidden sm:flex">
-                    <Globe size={12} /> Live Maps
+                    <Globe size={12} /> Satellite
                   </span>
                 </div>
 
-                <div className="w-full h-[350px] md:h-[500px] rounded-xl overflow-hidden border border-gray-300 shadow-inner relative bg-gray-100">
-                  <iframe title="Peta Interaktif Desa Sekunyit" src={mapEmbedUrl} className="w-full h-full border-0" allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
+                <div className="w-full h-[450px] md:h-[600px] rounded-xl overflow-hidden border border-gray-300 shadow-inner relative bg-gray-100">
+                  <MapContainer 
+                    center={mapCenter} 
+                    zoom={16} 
+                    scrollWheelZoom={false} 
+                    className="w-full h-full"
+                  >
+                    {/* Layer Citra Satelit (Esri World Imagery) */}
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    />
+                    
+                    {/* Polygon Batas Desa Merah */}
+                    <Polygon 
+                      positions={batasDesaPolygon} 
+                      pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.1, weight: 3 }} 
+                    />
+
+                    {/* Mapping 8 Titik Fasilitas Sesuai Gambar */}
+                    {titikPenting.map((titik, index) => (
+                      <Marker key={index} position={titik.pos}>
+                        <Popup>
+                          <div className="text-center p-1 w-44">
+                            <h3 className="font-montserrat font-bold text-blue-700 text-sm mb-1">{titik.name}</h3>
+                            <p className="font-inter text-xs text-gray-600 leading-tight mb-4">{titik.desc}</p>
+                            
+                            {/* TOMBOL ARAHKAN RUTE (GOOGLE MAPS) */}
+                            <a 
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${titik.pos[0]},${titik.pos[1]}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 w-full bg-blue-600 hover:bg-blue-700 !text-white-900 text-[11px] font-bold py-2.5 px-3 rounded-lg transition-colors no-underline"
+                              style={{ color: '#ffffff' }}
+                            >
+                              <MapPin size={14} color="#ffffff"/> Arahkan Rute
+                            </a>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+
+                  </MapContainer>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs font-inter text-gray-500">
+                  <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-500" /> Titik Lokasi Fasilitas</span>
+                  <span className="flex items-center gap-1.5"><div className="w-4 h-1 bg-red-500 rounded-full"></div> Batas Teritorial Desa</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-white border border-gray-400 rounded-full inline-block"></span> Klik pin untuk Rute Google Maps</span>
                 </div>
               </motion.section>
             </div>
