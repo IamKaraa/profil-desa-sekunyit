@@ -33,12 +33,9 @@ export default function AdatBudayaUser() {
       <header className="bg-[#111111] text-white h-[70px] flex items-center px-6 md:px-12 sticky top-0 z-50 shadow-md">
         <div className="max-w-6xl mx-auto w-full flex items-center gap-4">
           {/* Tombol Kembali (Opsional untuk UX yang baik) */}
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2 hover:bg-white/10 rounded-full transition-colors md:hidden"
-          >
-            <ArrowLeft size={20} />
-          </button>
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-90">
+                                <ArrowLeft size={20} />
+                              </button>
           <h1 className="font-montserrat font-semibold text-lg tracking-wide">
             Adat dan Budaya Desa
           </h1>

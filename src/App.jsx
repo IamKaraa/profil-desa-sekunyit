@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, MapPin, Mail, Phone, Image as ImageIcon } from 'lucide-react';
+import { Menu, X, MapPin, Mail, Phone, Image as ImageIcon, Map, Maximize } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './config/supabaseClient'; 
 
 const FacebookIcon = ({ size = 24 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>);
@@ -51,11 +52,13 @@ export default function App() {
   const navigate = useNavigate(); 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null); 
   
   // State untuk menampung Data Dashboard
   const [infoTerbaru, setInfoTerbaru] = useState([]);
   const [potensiTerbaru, setPotensiTerbaru] = useState([]);
-  const [galeriTerbaru, setGaleriTerbaru] = useState([]); // State Baru untuk Galeri
+  const [galeriTerbaru, setGaleriTerbaru] = useState([]); 
+  const [mapImage, setMapImage] = useState(null); 
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,48 +72,55 @@ export default function App() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // 1. Tarik Data Informasi
+        // 1. Tarik Data Peta dari Profil Desa
+        const { data: profilData, error: profilError } = await supabase
+          .from('desa_profil')
+          .select('data')
+          .eq('kategori', 'struktur')
+          .single();
+        if (!profilError && profilData?.data?.peta_desa) {
+          setMapImage(profilData.data.peta_desa);
+        }
+
+        // 2. Tarik Data Informasi
         const { data: infoData, error: infoError } = await supabase
           .from('informasi_desa')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(4);
-        if (infoError) throw infoError;
-        setInfoTerbaru(infoData || []);
+        if (!infoError) setInfoTerbaru(infoData || []);
 
-        // 2. Tarik Data Potensi
+        // 3. Tarik Data Potensi
         const { data: potensiData, error: potensiError } = await supabase
           .from('potensi_desa')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(3);
-        if (potensiError) throw potensiError;
-        setPotensiTerbaru(potensiData || []);
+        if (!potensiError) setPotensiTerbaru(potensiData || []);
 
-        // 3. Tarik Data Galeri & Gabungkan dengan Informasi yang ada gambarnya
+        // 4. Tarik Data Galeri & Gabungkan dengan Informasi yang ada gambarnya
         const { data: resGaleri, error: galeriError } = await supabase
           .from('galeri_desa')
           .select('*')
           .order('created_at', { ascending: false });
-        if (galeriError) throw galeriError;
+        if (!galeriError) {
+          const galeriMurni = (resGaleri || []).map(g => ({ ...g, source: 'galeri' }));
+          const galeriDariInfo = (infoData || [])
+            .filter(info => info.gambar)
+            .map(info => ({
+              id: `info-${info.id}`,
+              judul_kegiatan: info.judul,
+              gambar_urls: [info.gambar],
+              created_at: info.created_at,
+              source: 'informasi'
+            }));
 
-        const galeriMurni = (resGaleri || []).map(g => ({ ...g, source: 'galeri' }));
-        const galeriDariInfo = (infoData || [])
-          .filter(info => info.gambar)
-          .map(info => ({
-            id: `info-${info.id}`,
-            judul_kegiatan: info.judul,
-            gambar_urls: [info.gambar],
-            created_at: info.created_at,
-            source: 'informasi'
-          }));
+          const combinedGaleri = [...galeriMurni, ...galeriDariInfo]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 4); 
 
-        // Gabungkan, urutkan terbaru, dan ambil hanya 4 untuk ditampilkan di Beranda
-        const combinedGaleri = [...galeriMurni, ...galeriDariInfo]
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 4); 
-
-        setGaleriTerbaru(combinedGaleri);
+          setGaleriTerbaru(combinedGaleri);
+        }
 
       } catch (err) {
         console.error("Gagal menarik data beranda:", err.message);
@@ -141,6 +151,7 @@ export default function App() {
             </a>
           </div>
 
+          {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 text-white font-poppins text-sm uppercase tracking-widest">
             <a href="#profil" className="hover:text-gray-300 transition-colors">Profil</a>
             <a href="#seputar" className="hover:text-gray-300 transition-colors">Seputar Desa</a>
@@ -150,6 +161,7 @@ export default function App() {
             <a href="/aduan-warga" className="hover:text-gray-300 transition-colors">Adu</a>
           </div>
 
+          {/* Mobile Menu Toggle Button */}
           <div className="md:hidden">
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
               {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -157,14 +169,24 @@ export default function App() {
           </div>
         </div>
 
-        {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md flex flex-col py-4 px-6 gap-4 shadow-xl">
-            <a href="#beranda" className="text-white font-poppins py-2 border-b border-gray-700" onClick={() => setMobileMenuOpen(false)}>Beranda</a>
-            <a href="#profil" className="text-white font-poppins py-2 border-b border-gray-700" onClick={() => setMobileMenuOpen(false)}>Profil</a>
-            <a href="#galeri" className="text-white font-poppins py-2 border-b border-gray-700" onClick={() => setMobileMenuOpen(false)}>Galeri</a>
-            <a href="#kontak" className="text-white font-poppins py-2" onClick={() => setMobileMenuOpen(false)}>Kontak Kami</a>
-          </div>
-        )}
+        {/* Mobile Menu Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }}
+              className="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md flex flex-col py-2 px-6 shadow-xl"
+            >
+              <a href="#profil" className="text-white font-poppins py-4 border-b border-gray-700 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Profil</a>
+              <a href="#seputar" className="text-white font-poppins py-4 border-b border-gray-700 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Seputar Desa</a>
+              <a href="#potensi" className="text-white font-poppins py-4 border-b border-gray-700 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Potensi Desa</a>
+              <a href="#informasi" className="text-white font-poppins py-4 border-b border-gray-700 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Informasi</a>
+              <a href="#galeri" className="text-white font-poppins py-4 border-b border-gray-700 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Galeri</a>
+              <a href="/aduan-warga" className="text-white font-poppins py-4 text-sm tracking-widest uppercase hover:text-gray-300 transition-colors" onClick={() => setMobileMenuOpen(false)}>Adu</a>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* --- HERO SECTION --- */}
@@ -229,7 +251,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* --- Peta Desa --- */}
+      {/* --- Peta Desa (DINAMIS DARI ADMIN) --- */}
       <section className="bg-slate-50 py-20 px-6 md:px-12 border-t-4 border-zinc-900">
         <div className="container mx-auto max-w-5xl">
           <FadeInOnScroll>
@@ -237,8 +259,26 @@ export default function App() {
                 <div className="w-300 h-1 bg-zinc-900"></div>
             </div>
             <h2 className="text-zinc-900 font-montserrat font-bold text-xl md:text-2xl mb-6">Peta Desa Sekunyit</h2>
-            <div className="w-full bg-zinc-600 aspect-video rounded-xl shadow-xl flex items-center justify-center text-gray-300">
-              <span className="font-poppins">Video / Area Foto Utama</span>
+            
+            <div 
+              onClick={() => mapImage && setFullscreenImage(mapImage)}
+              className={`w-full bg-[#dcdcdc] rounded-xl border border-gray-300 flex flex-col items-center justify-center relative overflow-hidden group shadow-xl transition-all ${mapImage ? 'cursor-pointer hover:shadow-2xl h-auto' : 'aspect-video cursor-default'}`}
+            >
+              {mapImage ? (
+                <>
+                  <img src={mapImage} alt="Peta Desa Sekunyit" className="w-full h-auto object-contain" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                    <div className="bg-white/90 text-gray-900 px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 shadow-lg">
+                      <Maximize size={18} /> Perbesar Peta
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Map size={48} className="text-gray-400 mb-2" />
+                  <span className="text-gray-500 font-inter text-sm font-medium">Peta belum diunggah Admin</span>
+                </>
+              )}
             </div>
           </FadeInOnScroll>
         </div>
@@ -257,7 +297,7 @@ export default function App() {
             {[
                 { label: "Struktur Desa", path: "/struktur-organisasi" },
                 { label: "Visi dan Misi Desa", path: "/visi-misi" },
-                { label: "Tujuan Desa", path: "/visi-misi" }, // Tujuan digabung ke halaman Visi Misi
+                { label: "Tujuan Desa", path: "/visi-misi" }, 
                 { label: "Data Kependudukan", path: "/data-kependudukan" },
                 { label: "Potensi Desa", path: "/potensi-desa" },
                 { label: "Data Pembangunan", path: "/data-bangunan" },
@@ -297,7 +337,8 @@ export default function App() {
                   Lihat Selengkapnya
                 </button>
               </div>
-              <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
+              
+              <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                 {potensiTerbaru.length === 0 ? (
                   <div className="col-span-3 text-center text-white/50 text-sm py-10 font-inter border border-dashed border-white/20 rounded-lg">Belum ada potensi terdaftar.</div>
                 ) : (
@@ -307,11 +348,11 @@ export default function App() {
                       <div 
                         key={potensi.id} 
                         onClick={() => navigate('/potensi-desa')}
-                        className="bg-zinc-800/90 rounded-lg aspect-[1/2] sm:aspect-auto sm:h-full bg-cover bg-center cursor-pointer hover:scale-[1.03] transition-transform overflow-hidden relative group"
+                        className="bg-zinc-800/90 rounded-xl aspect-video sm:aspect-auto sm:min-h-[250px] md:h-full bg-cover bg-center cursor-pointer hover:scale-[1.03] transition-transform overflow-hidden relative group shadow-md"
                         style={{ backgroundImage: imgCover ? `url(${imgCover})` : 'none', animationDelay: `${index * 150}ms` }}
                       >
                         {!imgCover && <div className="absolute inset-0 flex items-center justify-center text-white/40 text-xs">Tanpa Gambar</div>}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                           <span className="text-white font-montserrat font-bold text-sm leading-tight line-clamp-3">{potensi.judul}</span>
                         </div>
                       </div>
@@ -319,6 +360,7 @@ export default function App() {
                   })
                 )}
               </div>
+
             </div>
           </FadeInOnScroll>
         </div>
@@ -468,6 +510,24 @@ export default function App() {
           <p>© 2026 KKN Kelompok 205 UNIB X UNILA</p>
         </div>
       </footer>
+
+      {/* LIGHTBOX MODAL UNTUK PETA */}
+      <AnimatePresence>
+        {fullscreenImage && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative z-10 w-full max-w-6xl h-full flex flex-col pointer-events-none">
+              <div className="flex justify-between items-start mb-4 pointer-events-auto">
+                <h3 className="text-white font-montserrat font-bold text-lg md:text-xl drop-shadow-md pr-8">Peta Desa Sekunyit</h3>
+                <button onClick={() => setFullscreenImage(null)} className="p-2 bg-white/10 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-md"><X size={24} /></button>
+              </div>
+              <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center pointer-events-auto">
+                <img src={fullscreenImage} alt="Peta Fullscreen" className="max-w-full max-h-full object-contain drop-shadow-2xl" />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -125,7 +125,6 @@ export default function AdminDashboard() {
              pData.bangunan = row.data;
            }
         } else if (row.kategori === 'geografi') {
-           // Auto Migrate Geografi Statis ke Geografi Array
            if (!Array.isArray(row.data.lahan)) {
              pData.geografi = {
                luas_total: row.data.luas_total || '', luas_belum: row.data.luas_belum || '', utara: row.data.utara || '', selatan: row.data.selatan || '', timur: row.data.timur || '', barat: row.data.barat || '',
@@ -287,23 +286,23 @@ export default function AdminDashboard() {
   // --- RENDERING UI ---
 
   const renderEditKonten = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full pb-8 font-inter">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 h-full pb-8 font-inter">
       {/* --- KOLOM KIRI --- */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 md:gap-6">
         
         {/* Modul 1 */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">MODUL 1</div>
           <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3 mt-2">
             <div className="p-2 bg-blue-100 text-blue-700 rounded-lg"><Settings size={20} /></div>
             <div>
-              <h3 className="font-montserrat font-bold text-gray-900 text-base">Struktur Pemerintahan</h3>
-              <p className="text-gray-500 text-[11px] font-medium">Unggah bagan (.JPG/.PNG).</p>
+              <h3 className="font-montserrat font-bold text-gray-900 text-sm md:text-base">Struktur Pemerintahan</h3>
+              <p className="text-gray-500 text-[10px] md:text-[11px] font-medium">Unggah bagan (.JPG/.PNG).</p>
             </div>
           </div>
-          <div className="flex justify-between items-center gap-3 mb-4">
-            <div className="relative flex-1">
-              <select value={selectedStruktur} onChange={e => setSelectedStruktur(e.target.value)} className="w-full appearance-none border border-gray-300 rounded-lg pl-4 pr-10 py-2 text-sm font-medium bg-gray-50 focus:outline-none focus:border-black cursor-pointer text-gray-800">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <div className="relative w-full sm:flex-1">
+              <select value={selectedStruktur} onChange={e => setSelectedStruktur(e.target.value)} className="w-full appearance-none border border-gray-300 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium bg-gray-50 focus:outline-none focus:border-black cursor-pointer text-gray-800">
                 <option value="pemerintah">Struktur Pemerintah Desa</option>
                 <option value="bpd">Struktur BPD</option>
                 <option value="karang_taruna">Struktur Karang Taruna</option>
@@ -312,7 +311,9 @@ export default function AdminDashboard() {
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"><ChevronDown size={16} /></div>
             </div>
             <input type="file" id="upload-struktur" className="hidden" accept="image/*" onChange={(e) => handleUploadGambarProfil(e, 'struktur', selectedStruktur)} />
-            <button onClick={() => document.getElementById('upload-struktur').click()} className="bg-black text-white rounded-lg p-2 hover:bg-gray-800 transition-colors"><Upload size={18} /></button>
+            <button onClick={() => document.getElementById('upload-struktur').click()} className="w-full sm:w-auto bg-black text-white rounded-lg p-2.5 hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+              <Upload size={18} /> <span className="sm:hidden text-sm font-semibold">Unggah File</span>
+            </button>
           </div>
           <div className="bg-gray-50 w-full h-[140px] rounded-lg flex items-center justify-center border border-dashed border-gray-300 overflow-hidden">
             {profilDesa.struktur[selectedStruktur] ? <img src={profilDesa.struktur[selectedStruktur]} alt="Preview Struktur" className="w-full h-full object-contain" /> : <span className="text-gray-400 font-inter text-xs font-medium flex flex-col items-center gap-1"><ImageIcon size={20}/> Belum Ada Gambar Bagan</span>}
@@ -320,78 +321,78 @@ export default function AdminDashboard() {
         </div>
 
         {/* Modul 3: Data Kependudukan */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">MODUL 3</div>
           <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3 mt-2">
             <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><Settings size={20} /></div>
             <div>
-              <h3 className="font-montserrat font-bold text-gray-900 text-base">Data Kependudukan</h3>
-              <p className="text-gray-500 text-[11px] font-medium">Perbarui angka statistik demografi desa.</p>
+              <h3 className="font-montserrat font-bold text-gray-900 text-sm md:text-base">Data Kependudukan</h3>
+              <p className="text-gray-500 text-[10px] md:text-[11px] font-medium">Perbarui angka statistik demografi desa.</p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
              <button onClick={() => openProfilModal('edit_kependudukan_utama')} className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex justify-center items-center gap-2">
-               <Edit size={16} className="text-emerald-600"/> Edit Nilai Kependudukan Utama
+               <Edit size={16} className="text-emerald-600"/> Nilai Kependudukan Utama
              </button>
              <button onClick={() => openProfilModal('edit_kependudukan_detail')} className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex justify-center items-center gap-2">
-               <Edit size={16} className="text-emerald-600"/> Edit Data Demografi Dinamis
+               <Edit size={16} className="text-emerald-600"/> Data Demografi Dinamis
              </button>
           </div>
         </div>
 
         {/* Modul 4: Data Bangunan */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">MODUL 4</div>
           <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3 mt-2">
             <div className="p-2 bg-amber-100 text-amber-700 rounded-lg"><Settings size={20} /></div>
             <div>
-              <h3 className="font-montserrat font-bold text-gray-900 text-base">Data Infrastruktur Bangunan</h3>
-              <p className="text-gray-500 text-[11px] font-medium">Kelola jumlah fasilitas Pendidikan, Kesehatan, Ibadah.</p>
+              <h3 className="font-montserrat font-bold text-gray-900 text-sm md:text-base">Data Infrastruktur Bangunan</h3>
+              <p className="text-gray-500 text-[10px] md:text-[11px] font-medium">Kelola jumlah fasilitas Pendidikan, Kesehatan, Ibadah.</p>
             </div>
           </div>
           <button onClick={() => openProfilModal('edit_bangunan')} className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex justify-center items-center gap-2">
-            <Edit size={16} className="text-amber-600"/> Kelola Angka Fasilitas Bangunan
+            <Edit size={16} className="text-amber-600"/> Kelola Angka Fasilitas
           </button>
         </div>
 
       </div>
 
       {/* --- KOLOM KANAN --- */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 md:gap-6">
 
         {/* Modul 5: Kontak Penting */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">MODUL 5</div>
           <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3 mt-2">
             <div className="p-2 bg-purple-100 text-purple-700 rounded-lg"><Settings size={20} /></div>
             <div>
-              <h3 className="font-montserrat font-bold text-gray-900 text-base">Kontak Penting & Darurat</h3>
-              <p className="text-gray-500 text-[11px] font-medium">Tambah, edit, atau hapus daftar kontak instansi.</p>
+              <h3 className="font-montserrat font-bold text-gray-900 text-sm md:text-base">Kontak Penting & Darurat</h3>
+              <p className="text-gray-500 text-[10px] md:text-[11px] font-medium">Tambah, edit, atau hapus daftar kontak instansi.</p>
             </div>
           </div>
-          <div className="border border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-3 bg-gray-50">
-             <button onClick={() => openProfilModal('edit_kontak')} className="bg-black text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors flex items-center gap-2 shadow-md">
+          <div className="border border-dashed border-gray-300 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center gap-3 bg-gray-50">
+             <button onClick={() => openProfilModal('edit_kontak')} className="w-full sm:w-auto bg-black text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-md">
                Kelola Daftar Kontak <ExternalLink size={16}/>
              </button>
-             <span className="text-[10px] text-gray-400 font-medium">*Nomor ini akan terhubung ke WhatsApp / Telepon Warga</span>
+             <span className="text-[10px] text-gray-400 font-medium text-center">*Nomor ini akan terhubung ke WhatsApp / Telepon Warga</span>
           </div>
         </div>
 
         {/* Modul 6: Geografi Desa */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">MODUL 6</div>
           <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3 mt-2">
             <div className="p-2 bg-rose-100 text-rose-700 rounded-lg"><Settings size={20} /></div>
             <div>
-              <h3 className="font-montserrat font-bold text-gray-900 text-base">Geologis & Pemetaan Lahan</h3>
-              <p className="text-gray-500 text-[11px] font-medium">Kelola gambar peta dan data wilayah.</p>
+              <h3 className="font-montserrat font-bold text-gray-900 text-sm md:text-base">Geologis & Pemetaan Lahan</h3>
+              <p className="text-gray-500 text-[10px] md:text-[11px] font-medium">Kelola gambar peta dan data wilayah.</p>
             </div>
           </div>
           <div className="bg-gray-50 w-full h-[140px] rounded-lg flex items-center justify-center relative group overflow-hidden mb-4 border border-dashed border-gray-300">
             {profilDesa.struktur.peta_desa ? (
               <img src={profilDesa.struktur.peta_desa} alt="Peta Desa" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-gray-400 font-inter text-xs font-medium flex flex-col items-center gap-2"><MapPin size={24}/> Preview Gambar Peta Belum Diunggah</span>
+              <span className="text-gray-400 font-inter text-xs font-medium flex flex-col items-center gap-2"><MapPin size={24}/> Preview Peta Belum Diunggah</span>
             )}
             <input type="file" id="upload-peta" className="hidden" accept="image/*" onChange={(e) => handleUploadGambarProfil(e, 'struktur', 'peta_desa')} />
             <div onClick={() => document.getElementById('upload-peta').click()} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer backdrop-blur-sm">
@@ -404,13 +405,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Info Modul Statis */}
-        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-center">
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 md:p-5 shadow-sm relative overflow-hidden flex flex-col justify-center">
           <div className="flex items-start gap-3">
              <AlertCircle size={20} className="text-zinc-600 shrink-0 mt-0.5" />
              <div>
                 <h4 className="font-bold text-zinc-800 text-sm mb-1.5">Informasi Konten Statis Tersistem</h4>
                 <p className="text-xs text-zinc-600 leading-relaxed text-justify">
-                   Sesuai dengan regulasi sistem, modul <strong>(2) Visi, Misi, Tujuan</strong> dan modul <strong>(7) Adat & Budaya</strong> bersifat permanen (Statis) di dalam *source code*. Konten ini dikunci dan tidak memerlukan akses perubahan rutin oleh Admin.
+                   Sesuai dengan regulasi sistem, modul <strong>(2) Visi, Misi, Tujuan</strong> dan modul <strong>(7) Adat & Budaya</strong> bersifat permanen di dalam *source code*. Konten ini tidak memerlukan akses perubahan rutin oleh Admin.
                 </p>
              </div>
           </div>
@@ -420,21 +421,107 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderTambahStaff = () => (
+    <div className="flex flex-col gap-6 md:gap-8 h-full pb-8 font-inter">
+      {/* Form Tambah Staff */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 md:p-8 shadow-sm">
+        <div className="mb-6">
+          <h3 className="font-montserrat font-bold text-gray-900 text-lg">Daftarkan Staf Baru</h3>
+          <p className="text-gray-500 text-xs mt-1">Buat akun untuk perangkat desa agar dapat mengakses dashboard ini.</p>
+        </div>
+
+        {staffError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-2">
+            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+            <span>{staffError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleCreateStaff} className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Nama Pengguna</label>
+            <input type="text" required value={staffForm.nama_user} onChange={e => setStaffForm({...staffForm, nama_user: e.target.value})} className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-black focus:border-black outline-none bg-gray-50 text-sm font-medium" placeholder="Cth: Budi Santoso" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Email</label>
+            <input type="email" required value={staffForm.email} onChange={e => setStaffForm({...staffForm, email: e.target.value})} className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-black focus:border-black outline-none bg-gray-50 text-sm font-medium" placeholder="Cth: budi@sekunyit.desa.id" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Kata Sandi (Password)</label>
+            <input type="password" required minLength={6} value={staffForm.password} onChange={e => setStaffForm({...staffForm, password: e.target.value})} className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-black focus:border-black outline-none bg-gray-50 text-sm font-medium" placeholder="Minimal 6 karakter" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Hak Akses (Role)</label>
+            <div className="relative">
+              <select value={staffForm.role} onChange={e => setStaffForm({...staffForm, role: e.target.value})} className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-black focus:border-black outline-none bg-gray-50 text-sm font-bold appearance-none cursor-pointer">
+                <option value="admin">Admin Biasa</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"><ChevronDown size={18} /></div>
+            </div>
+          </div>
+          <div className="md:col-span-2 pt-2">
+            <button type="submit" disabled={staffSubmitLoading} className="w-full sm:w-auto bg-black text-white font-bold px-8 py-3.5 rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed">
+              {staffSubmitLoading ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+              {staffSubmitLoading ? 'Memproses...' : 'Daftarkan Akun Staf'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Tabel Daftar Staff */}
+      <div className="bg-white border border-gray-200 rounded-2xl flex flex-col shadow-sm overflow-hidden">
+        <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100">
+          <h3 className="font-montserrat font-bold text-gray-900 text-lg">Daftar Pengurus Sistem</h3>
+          <p className="text-gray-500 text-xs mt-1">Akun yang memiliki hak akses ke Dashboard Desa Sekunyit.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-gray-800 font-montserrat uppercase text-xs border-b border-gray-200 whitespace-nowrap">
+              <tr>
+                <th className="px-4 md:px-6 py-4">Nama Pengguna</th>
+                <th className="px-4 md:px-6 py-4">Hak Akses</th>
+                <th className="px-4 md:px-6 py-4">Tgl Terdaftar</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 whitespace-nowrap">
+              {staffList.length === 0 ? (
+                <tr><td colSpan="3" className="text-center py-8 text-gray-400 italic">Belum ada data staf.</td></tr>
+              ) : (
+                staffList.map((staff) => (
+                  <tr key={staff.id} className="hover:bg-gray-50">
+                    <td className="px-4 md:px-6 py-4 font-bold text-gray-900">{staff.nama_user}</td>
+                    <td className="px-4 md:px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${staff.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {staff.role.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 text-xs font-medium">{formatTanggal(staff.created_at)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderInformasiDesa = () => (
-    <div className="flex flex-col gap-6 mt-2 h-full">
+    <div className="flex flex-col gap-4 mt-2 h-full">
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
         <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-100 text-gray-800 font-montserrat uppercase text-xs">
-            <tr><th className="px-6 py-4">Judul Informasi</th><th className="px-6 py-4">Kategori</th><th className="px-6 py-4">Lokasi Wilayah</th><th className="px-6 py-4">Tgl Publikasi</th><th className="px-6 py-4 text-center">Aksi</th></tr>
+          <thead className="bg-gray-100 text-gray-800 font-montserrat uppercase text-xs whitespace-nowrap">
+            <tr><th className="px-4 md:px-6 py-4">Judul Informasi</th><th className="px-4 md:px-6 py-4">Kategori</th><th className="px-4 md:px-6 py-4">Lokasi Wilayah</th><th className="px-4 md:px-6 py-4">Tgl Publikasi</th><th className="px-4 md:px-6 py-4 text-center">Aksi</th></tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 font-inter">
+          <tbody className="divide-y divide-gray-200 font-inter whitespace-nowrap">
             {informasiList.length === 0 ? <tr><td colSpan="5" className="text-center py-8 text-gray-400 italic">Belum ada konten informasi desa.</td></tr> : informasiList.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-semibold text-gray-900 max-w-[220px] truncate">{item.judul}</td>
-                  <td className="px-6 py-4 uppercase text-xs"><span className={`px-2.5 py-1 rounded-md font-bold ${item.kategori_informasi === 'kegiatan' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>{item.kategori_informasi}</span></td>
-                  <td className="px-6 py-4 truncate max-w-[150px]">{item.lokasi || '-'}</td>
-                  <td className="px-6 py-4 text-xs font-medium text-gray-500">{formatTanggal(item.created_at)}</td>
-                  <td className="px-6 py-4 text-center"><button onClick={() => openModal(item, 'informasi')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={18} /></button></td>
+                  <td className="px-4 md:px-6 py-4 font-semibold text-gray-900 max-w-[180px] md:max-w-[220px] truncate">{item.judul}</td>
+                  <td className="px-4 md:px-6 py-4 uppercase text-xs"><span className={`px-2.5 py-1 rounded-md font-bold ${item.kategori_informasi === 'kegiatan' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>{item.kategori_informasi}</span></td>
+                  <td className="px-4 md:px-6 py-4 truncate max-w-[120px] md:max-w-[150px]">{item.lokasi || '-'}</td>
+                  <td className="px-4 md:px-6 py-4 text-xs font-medium text-gray-500">{formatTanggal(item.created_at)}</td>
+                  <td className="px-4 md:px-6 py-4 text-center"><button onClick={() => openModal(item, 'informasi')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={18} /></button></td>
                 </tr>
               ))
             }
@@ -451,30 +538,42 @@ export default function AdminDashboard() {
       return matchKategori && matchStatus;
     });
     return (
-      <div className="flex flex-col gap-6 mt-2 h-full">
+      <div className="flex flex-col gap-4 md:gap-6 mt-2 h-full">
+        {/* Filter Section - Responsive for Mobile */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
-          <h3 className="font-montserrat font-bold text-gray-900 text-sm flex items-center gap-2"><Filter size={16} className="text-blue-500" /> Filter Laporan:</h3>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <select value={filterKategori} onChange={(e) => setFilterKategori(e.target.value)} className="w-full text-sm bg-gray-50 border border-gray-300 rounded-full pl-5 pr-9 py-2 focus:ring-black focus:border-black outline-none"><option value="Semua">Semua Kategori</option><option value="Infrastruktur & Fasilitas">Infrastruktur</option><option value="Keamanan & Ketertiban">Keamanan</option><option value="Kebersihan & Lingkungan">Lingkungan</option><option value="Pelayanan Aparatur">Aparatur</option><option value="Lainnya">Lainnya</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600"><ChevronDown size={16} /></div>
+          <h3 className="font-montserrat font-bold text-gray-900 text-sm flex items-center gap-2 whitespace-nowrap"><Filter size={16} className="text-blue-500" /> Filter Laporan:</h3>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <select value={filterKategori} onChange={(e) => setFilterKategori(e.target.value)} className="w-full sm:w-48 text-sm bg-gray-50 border border-gray-300 rounded-full pl-5 pr-9 py-2 focus:ring-black focus:border-black outline-none appearance-none cursor-pointer"><option value="Semua">Semua Kategori</option><option value="Infrastruktur & Fasilitas">Infrastruktur</option><option value="Keamanan & Ketertiban">Keamanan</option><option value="Kebersihan & Lingkungan">Lingkungan</option><option value="Pelayanan Aparatur">Aparatur</option><option value="Lainnya">Lainnya</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600"><ChevronDown size={16} /></div>
             </div>
-            <div className="relative flex-1 sm:flex-none">
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full text-sm bg-gray-50 border border-gray-300 rounded-full pl-5 pr-9 py-2 focus:ring-black focus:border-black outline-none"><option value="Semua">Semua Status</option><option value="Menunggu">Menunggu</option><option value="Diproses">Diproses</option><option value="Selesai">Selesai</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600"><ChevronDown size={16} /></div>
+            <div className="relative w-full sm:w-auto">
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full sm:w-40 text-sm bg-gray-50 border border-gray-300 rounded-full pl-5 pr-9 py-2 focus:ring-black focus:border-black outline-none appearance-none cursor-pointer"><option value="Semua">Semua Status</option><option value="Menunggu">Menunggu</option><option value="Diproses">Diproses</option><option value="Selesai">Selesai</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600"><ChevronDown size={16} /></div>
             </div>
           </div>
         </div>
+
+        {/* Table Section - Horizontal Scrollable on Mobile */}
         <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
           <table className="w-full text-left text-sm text-gray-600 font-inter">
-            <thead className="bg-gray-100 text-gray-800 font-montserrat uppercase text-xs"><tr><th className="px-6 py-4">Pelapor</th><th className="px-6 py-4">Kategori</th><th className="px-6 py-4">Lokasi Masalah</th><th className="px-6 py-4">Judul Laporan</th><th className="px-6 py-4 text-center">Status</th><th className="px-6 py-4 text-center">Aksi</th></tr></thead>
-            <tbody className="divide-y divide-gray-200">
+            <thead className="bg-gray-100 text-gray-800 font-montserrat uppercase text-[11px] md:text-xs whitespace-nowrap">
+              <tr>
+                <th className="px-4 md:px-6 py-3 md:py-4">Pelapor</th>
+                <th className="px-4 md:px-6 py-3 md:py-4">Kategori</th>
+                <th className="px-4 md:px-6 py-3 md:py-4">Lokasi Masalah</th>
+                <th className="px-4 md:px-6 py-3 md:py-4">Judul Laporan</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 text-center">Status</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 whitespace-nowrap">
               {filteredPengaduan.length === 0 ? <tr><td colSpan="6" className="text-center py-10 text-gray-400 italic">Tidak ada laporan.</td></tr> : filteredPengaduan.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium">{item.is_anonim ? <span className="italic text-gray-400">Anonim</span> : item.nama_pelapor}</td>
-                    <td className="px-6 py-4"><span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium">{item.kategori_pengaduan || item.kategori}</span></td>
-                    <td className="px-6 py-4 truncate max-w-[150px]">{item.lokasi || '-'}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[180px]">{item.judul}</td>
-                    <td className="px-6 py-4 text-center"><span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${item.status === 'Selesai' ? 'bg-green-100 text-green-700' : item.status === 'Diproses' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{item.status}</span></td>
-                    <td className="px-6 py-4 text-center"><button onClick={() => openModal(item, 'pengaduan')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={18} /></button></td>
+                    <td className="px-4 md:px-6 py-4 font-medium">{item.is_anonim ? <span className="italic text-gray-400">Anonim</span> : item.nama_pelapor}</td>
+                    <td className="px-4 md:px-6 py-4"><span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-[10px] md:text-xs font-medium">{item.kategori_pengaduan || item.kategori}</span></td>
+                    <td className="px-4 md:px-6 py-4 truncate max-w-[120px] md:max-w-[150px]">{item.lokasi || '-'}</td>
+                    <td className="px-4 md:px-6 py-4 font-medium text-gray-900 truncate max-w-[150px] md:max-w-[180px]">{item.judul}</td>
+                    <td className="px-4 md:px-6 py-4 text-center"><span className={`px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider ${item.status === 'Selesai' ? 'bg-green-100 text-green-700' : item.status === 'Diproses' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{item.status}</span></td>
+                    <td className="px-4 md:px-6 py-4 text-center"><button onClick={() => openModal(item, 'pengaduan')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={18} /></button></td>
                   </tr>
                 ))
               }
@@ -486,7 +585,7 @@ export default function AdminDashboard() {
   };
 
   const renderPotensiDesa = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-2 pb-8 h-full font-inter">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mt-2 pb-8 h-full font-inter">
       {potensiList.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400 italic bg-white rounded-xl border">Belum ada potensi desa terdaftar.</div> : potensiList.map((item, index) => {
           const sampulPotensi = item.gambar_urls && item.gambar_urls.length > 0 ? item.gambar_urls[0] : item.gambar;
           return (
@@ -495,7 +594,7 @@ export default function AdminDashboard() {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10 p-4 h-full flex flex-col justify-end">
                 <span className="text-[10px] bg-[#00bced] text-white font-bold px-2 py-0.5 rounded w-fit mb-1.5 uppercase">{(item.gambar_urls || []).length || 1} Foto</span>
-                <h4 className="text-white font-montserrat font-bold text-base leading-tight mb-1 truncate drop-shadow-md">{item.judul}</h4>
+                <h4 className="text-white font-montserrat font-bold text-sm md:text-base leading-tight mb-1 truncate drop-shadow-md">{item.judul}</h4>
                 <p className="text-gray-300 text-xs font-normal leading-normal line-clamp-2 drop-shadow-sm">{item.deskripsi}</p>
                 <button onClick={(e) => handleDeletePotensi(item.id, e)} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-90 group-hover:scale-100 shadow-md"><Trash2 size={14} /></button>
               </div>
@@ -507,7 +606,7 @@ export default function AdminDashboard() {
   );
 
   const renderGaleriDesa = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-2 pb-8 h-full font-inter">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mt-2 pb-8 h-full font-inter">
       {galeriList.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400 italic bg-white rounded-xl border">Belum ada album galeri terdaftar.</div> : galeriList.map((item, index) => {
           const coverImg = item.gambar_urls && item.gambar_urls.length > 0 ? item.gambar_urls[0] : null;
           return (
@@ -540,13 +639,13 @@ export default function AdminDashboard() {
     <div className="h-screen w-full flex flex-col font-inter bg-[#f2f7f8] overflow-hidden">
       <style dangerouslySetInnerHTML={{__html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700&display=swap'); .font-montserrat { font-family: 'Montserrat', sans-serif; } .font-inter { font-family: 'Inter', sans-serif; } .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}} />
 
-      <header className="h-[88px] bg-[#111111] flex items-center justify-between px-6 md:px-12 shrink-0 z-30 relative shadow-md">
-        <div className="flex items-center gap-4 md:gap-5">
+      <header className="h-[88px] bg-[#111111] flex items-center justify-between px-4 sm:px-6 md:px-12 shrink-0 z-30 relative shadow-md">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
           <button className="md:hidden text-white hover:text-gray-300 transition-colors" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu size={28} /></button>
-          <div className="w-12 h-12 bg-[#dedede] rounded-full flex items-center justify-center text-sm font-bold text-black uppercase">{adminProfile.nama.charAt(0)}</div>
-          <div className="hidden sm:flex flex-col"><h1 className="text-white font-montserrat font-semibold text-base tracking-wide leading-tight">Desa Sekunyit</h1><span className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">{adminProfile.nama} ({adminProfile.role})</span></div>
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-[#dedede] rounded-full flex items-center justify-center text-sm font-bold text-black uppercase">{adminProfile.nama.charAt(0)}</div>
+          <div className="flex flex-col"><h1 className="text-white font-montserrat font-semibold text-sm md:text-base tracking-wide leading-tight">Desa Sekunyit</h1><span className="text-gray-400 text-[9px] md:text-[11px] font-bold uppercase tracking-wider">{adminProfile.nama} ({adminProfile.role})</span></div>
         </div>
-        <button onClick={handleLogout} className="bg-[#ff0a0a] hover:bg-[#d60000] text-white font-medium px-8 py-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-lg shadow-red-500/20 text-sm">Keluar</button>
+        <button onClick={handleLogout} className="bg-[#ff0a0a] hover:bg-[#d60000] text-white font-medium px-4 md:px-8 py-2 md:py-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-lg shadow-red-500/20 text-xs md:text-sm">Keluar</button>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -560,20 +659,21 @@ export default function AdminDashboard() {
 
         <AnimatePresence>{isSidebarOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50 z-10 md:hidden" onClick={() => setIsSidebarOpen(false)} />}</AnimatePresence>
 
-        <main className="flex-1 p-6 md:p-10 overflow-y-auto relative z-0 flex flex-col bg-[#f2f7f8]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-gray-200 pb-4 shrink-0">
-            <div><h2 className="text-xl md:text-2xl font-montserrat font-bold text-gray-900">{activeTab}</h2><p className="text-xs text-gray-500 font-medium mt-0.5">Manajemen repositori sistem digital</p></div>
+        <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto relative z-0 flex flex-col bg-[#f2f7f8]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4 border-b border-gray-200 pb-3 md:pb-4 shrink-0">
+            <div><h2 className="text-lg md:text-2xl font-montserrat font-bold text-gray-900">{activeTab}</h2><p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5">Manajemen repositori sistem digital</p></div>
             {['Informasi Desa', 'Galeri Desa', 'Potensi Desa'].includes(activeTab) && (
-              <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} onClick={() => navigate(activeTab==='Informasi Desa'?'/admin/tambah-informasi':activeTab==='Potensi Desa'?'/admin/tambah-potensi':'/admin/tambah-galeri')} className="bg-[#00bced] hover:bg-[#00a3cc] text-white font-medium px-8 py-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-md flex items-center justify-center gap-2 text-sm whitespace-nowrap self-end sm:self-auto"><Plus size={16}/> Tambah {activeTab.split(' ')[0]} Baru</motion.button>
+              <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} onClick={() => navigate(activeTab==='Informasi Desa'?'/admin/tambah-informasi':activeTab==='Potensi Desa'?'/admin/tambah-potensi':'/admin/tambah-galeri')} className="w-full sm:w-auto bg-[#00bced] hover:bg-[#00a3cc] text-white font-medium px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-md flex items-center justify-center gap-2 text-sm whitespace-nowrap"><Plus size={16}/> Tambah {activeTab.split(' ')[0]} Baru</motion.button>
             )}
           </div>
 
-          <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`w-full flex-1 flex flex-col h-full ${activeTab === 'Edit Konten' || activeTab === 'Tambah Staff' ? '' : 'bg-[#dcdcdc] rounded-sm border border-gray-300 p-6 md:p-8'}`}>
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`w-full flex-1 flex flex-col h-full ${activeTab === 'Edit Konten' || activeTab === 'Tambah Staff' ? '' : 'bg-[#dcdcdc] rounded-sm border border-gray-300 p-4 sm:p-6 md:p-8'}`}>
             {activeTab === 'Informasi Desa' && renderInformasiDesa()}
             {activeTab === 'Pusat Pengaduan' && renderPusatPengaduan()}
             {activeTab === 'Potensi Desa' && renderPotensiDesa()}
             {activeTab === 'Galeri Desa' && renderGaleriDesa()}
             {activeTab === 'Edit Konten' && renderEditKonten()}
+            {activeTab === 'Tambah Staff' && renderTambahStaff()}
           </motion.div>
         </main>
       </div>
@@ -585,8 +685,8 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModal} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
             
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className={`bg-white shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh] ${modalType === 'galeri' ? 'w-full max-w-4xl bg-[#111] rounded-sm' : 'w-full max-w-2xl rounded-2xl'}`}>
-              <div className={`px-6 py-4 flex justify-between items-center ${modalType === 'galeri' ? 'bg-[#222] border-b border-[#333]' : 'bg-gray-50 border-b border-gray-100'}`}>
-                <h3 className={`font-montserrat font-bold text-base md:text-lg ${modalType === 'galeri' ? 'text-white' : 'text-gray-900'}`}>
+              <div className={`px-4 sm:px-6 py-4 flex justify-between items-center gap-4 ${modalType === 'galeri' ? 'bg-[#222] border-b border-[#333]' : 'bg-gray-50 border-b border-gray-100'}`}>
+                <h3 className={`font-montserrat font-bold text-sm md:text-lg ${modalType === 'galeri' ? 'text-white' : 'text-gray-900'} truncate`}>
                   {modalType === 'pengaduan' ? 'Detail Pengaduan Masuk' : 
                    modalType === 'potensi' ? 'Detail Potensi Wilayah' : 
                    modalType === 'galeri' ? selectedItem.judul_kegiatan : 
@@ -596,16 +696,16 @@ export default function AdminDashboard() {
                    modalType === 'edit_geografi' ? 'Kelola Data Geografi' :
                    modalType === 'edit_kontak' ? 'Manajemen Kontak Darurat' : 'Rincian Informasi'}
                 </h3>
-                <button onClick={closeModal} className={`p-2 rounded-full transition-colors ${modalType === 'galeri' ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}><X size={20} /></button>
+                <button onClick={closeModal} className={`p-2 rounded-full shrink-0 transition-colors ${modalType === 'galeri' ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}><X size={20} /></button>
               </div>
 
-              <div className={`overflow-y-auto ${modalType === 'galeri' ? 'p-0 flex flex-col' : 'p-6'}`}>
+              <div className={`overflow-y-auto ${modalType === 'galeri' ? 'p-0 flex flex-col' : 'p-4 sm:p-6'}`}>
                 
                 {/* 1.A Modal Kependudukan UTAMA */}
                 {modalType === 'edit_kependudukan_utama' && tempData && tempData.utama && (
                    <div className="space-y-4 font-inter text-sm">
-                     <p className="text-gray-500 mb-4">Perbarui empat pilar statistik kependudukan utama desa.</p>
-                     <div className="grid grid-cols-2 gap-4">
+                     <p className="text-gray-500 mb-4 text-xs md:text-sm">Perbarui empat pilar statistik kependudukan utama desa.</p>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                        <div><label className="font-bold text-gray-700 block mb-1">Total Penduduk</label><input type="number" className="w-full border p-2.5 rounded-lg focus:border-black outline-none" value={tempData.utama.total} onChange={e=> setTempData({...tempData, utama: {...tempData.utama, total: e.target.value === '' ? '' : parseInt(e.target.value, 10)}}) } /></div>
                        <div><label className="font-bold text-gray-700 block mb-1">Total Kepala Keluarga (KK)</label><input type="number" className="w-full border p-2.5 rounded-lg focus:border-black outline-none" value={tempData.utama.kk} onChange={e=> setTempData({...tempData, utama: {...tempData.utama, kk: e.target.value === '' ? '' : parseInt(e.target.value, 10)}}) } /></div>
                        <div><label className="font-bold text-gray-700 block mb-1">Laki - Laki</label><input type="number" className="w-full border p-2.5 rounded-lg focus:border-black outline-none" value={tempData.utama.laki} onChange={e=> setTempData({...tempData, utama: {...tempData.utama, laki: e.target.value === '' ? '' : parseInt(e.target.value, 10)}}) } /></div>
@@ -625,10 +725,10 @@ export default function AdminDashboard() {
                      </div>
                      <div className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-[250px] p-1">
                         {tempData[activeKepTab]?.map((item, idx) => (
-                           <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                              <div className="flex-1"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Kategori</label><input className="w-full border p-2 rounded-lg outline-none focus:border-emerald-500 font-semibold text-gray-800" value={item.name} placeholder="Contoh: Petani" onChange={e => { const newArr = [...tempData[activeKepTab]]; newArr[idx] = { ...newArr[idx], name: e.target.value }; setTempData({...tempData, [activeKepTab]: newArr}); }} /></div>
-                              <div className="w-24"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Jumlah</label><input type="number" className="w-full border p-2 rounded-lg outline-none focus:border-emerald-500 text-center font-bold text-gray-800" value={item.jumlah} onChange={e => { const val = e.target.value; const newArr = [...tempData[activeKepTab]]; newArr[idx] = { ...newArr[idx], jumlah: val === '' ? '' : parseInt(val, 10) }; setTempData({...tempData, [activeKepTab]: newArr}); }} /></div>
-                              <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition" onClick={() => { const newArr = tempData[activeKepTab].filter((_, i) => i !== idx); setTempData({...tempData, [activeKepTab]: newArr}); }}><Trash2 size={16} /></button>
+                           <div key={idx} className="flex items-center gap-2 md:gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                              <div className="flex-1"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Kategori</label><input className="w-full border p-2 rounded-lg outline-none focus:border-emerald-500 font-semibold text-gray-800 text-xs md:text-sm" value={item.name} placeholder="Contoh: Petani" onChange={e => { const newArr = [...tempData[activeKepTab]]; newArr[idx] = { ...newArr[idx], name: e.target.value }; setTempData({...tempData, [activeKepTab]: newArr}); }} /></div>
+                              <div className="w-20 md:w-24"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Jumlah</label><input type="number" className="w-full border p-2 rounded-lg outline-none focus:border-emerald-500 text-center font-bold text-gray-800 text-xs md:text-sm" value={item.jumlah} onChange={e => { const val = e.target.value; const newArr = [...tempData[activeKepTab]]; newArr[idx] = { ...newArr[idx], jumlah: val === '' ? '' : parseInt(val, 10) }; setTempData({...tempData, [activeKepTab]: newArr}); }} /></div>
+                              <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2 md:p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition" onClick={() => { const newArr = tempData[activeKepTab].filter((_, i) => i !== idx); setTempData({...tempData, [activeKepTab]: newArr}); }}><Trash2 size={16} /></button>
                            </div>
                         ))}
                         {(!tempData[activeKepTab] || tempData[activeKepTab].length === 0) && <div className="text-center py-10 text-gray-400 italic">Belum ada data, silakan tambah baris baru.</div>}
@@ -641,7 +741,7 @@ export default function AdminDashboard() {
                 {/* 2. Modal Infrastruktur Bangunan Dinamis */}
                 {modalType === 'edit_bangunan' && tempData && (
                    <div className="space-y-4 font-inter text-sm flex flex-col h-full max-h-[70vh]">
-                     <p className="text-gray-500 mb-2">Kelola daftar fasilitas desa berdasarkan kategorinya.</p>
+                     <p className="text-gray-500 mb-2 text-xs md:text-sm">Kelola daftar fasilitas desa berdasarkan kategorinya.</p>
                      <div className="flex gap-2 border-b border-gray-200 overflow-x-auto hide-scrollbar pb-3">
                         {['pendidikan', 'kesehatan', 'ibadah', 'umum'].map(tab => (
                            <button key={tab} onClick={() => setActiveBangunanTab(tab)} className={`px-4 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-colors ${activeBangunanTab === tab ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>DATA {tab.toUpperCase()}</button>
@@ -649,20 +749,20 @@ export default function AdminDashboard() {
                      </div>
                      <div className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-[250px] p-1">
                         {tempData[activeBangunanTab]?.map((item, idx) => (
-                           <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                              <div className="flex-1"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Nama Bangunan / Fasilitas</label><input className="w-full border p-2 rounded-lg outline-none focus:border-amber-500 font-semibold text-gray-800" value={item.name} placeholder="Contoh: Posyandu Mekar" onChange={e => { const newArr = [...tempData[activeBangunanTab]]; newArr[idx] = { ...newArr[idx], name: e.target.value }; setTempData({...tempData, [activeBangunanTab]: newArr}); }} /></div>
-                              <div className="w-24"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Jumlah</label><input type="number" className="w-full border p-2 rounded-lg outline-none focus:border-amber-500 text-center font-bold text-gray-800" value={item.jumlah} onChange={e => { const val = e.target.value; const newArr = [...tempData[activeBangunanTab]]; newArr[idx] = { ...newArr[idx], jumlah: val === '' ? '' : parseInt(val, 10) }; setTempData({...tempData, [activeBangunanTab]: newArr}); }} /></div>
-                              <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition" onClick={() => { const newArr = tempData[activeBangunanTab].filter((_, i) => i !== idx); setTempData({...tempData, [activeBangunanTab]: newArr}); }}><Trash2 size={16} /></button>
+                           <div key={idx} className="flex items-center gap-2 md:gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                              <div className="flex-1"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Nama Bangunan</label><input className="w-full border p-2 rounded-lg outline-none focus:border-amber-500 font-semibold text-gray-800 text-xs md:text-sm" value={item.name} placeholder="Contoh: Posyandu Mekar" onChange={e => { const newArr = [...tempData[activeBangunanTab]]; newArr[idx] = { ...newArr[idx], name: e.target.value }; setTempData({...tempData, [activeBangunanTab]: newArr}); }} /></div>
+                              <div className="w-20 md:w-24"><label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Jumlah</label><input type="number" className="w-full border p-2 rounded-lg outline-none focus:border-amber-500 text-center font-bold text-gray-800 text-xs md:text-sm" value={item.jumlah} onChange={e => { const val = e.target.value; const newArr = [...tempData[activeBangunanTab]]; newArr[idx] = { ...newArr[idx], jumlah: val === '' ? '' : parseInt(val, 10) }; setTempData({...tempData, [activeBangunanTab]: newArr}); }} /></div>
+                              <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2 md:p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition" onClick={() => { const newArr = tempData[activeBangunanTab].filter((_, i) => i !== idx); setTempData({...tempData, [activeBangunanTab]: newArr}); }}><Trash2 size={16} /></button>
                            </div>
                         ))}
                         {(!tempData[activeBangunanTab] || tempData[activeBangunanTab].length === 0) && <div className="text-center py-10 text-gray-400 italic">Belum ada data, silakan tambah fasilitas baru.</div>}
                      </div>
                      
-                     <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 mt-2">
-                        <h4 className="font-bold text-amber-900 mb-2 text-xs uppercase">Tambah Fasilitas Baru</h4>
-                        <div className="flex gap-2">
-                           <input type="text" id="newBangunanKey" placeholder="Nama Bangunan (Cth: Posyandu)" className="flex-1 border border-amber-200 p-2 rounded-lg outline-none focus:border-amber-500" />
-                           <button onClick={() => { const inputEl = document.getElementById('newBangunanKey'); const val = inputEl.value.trim(); if(val) { setTempData({...tempData, [activeBangunanTab]: [...(tempData[activeBangunanTab]||[]), {name: val, jumlah: 0}]}); inputEl.value = ''; } }} className="bg-amber-500 text-white px-4 rounded-lg font-bold hover:bg-amber-600 transition">Tambah</button>
+                     <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 mt-2 flex flex-col gap-2">
+                        <h4 className="font-bold text-amber-900 text-xs uppercase">Tambah Fasilitas Baru</h4>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                           <input type="text" id="newBangunanKey" placeholder="Nama Bangunan (Cth: Posyandu)" className="flex-1 border border-amber-200 p-2 rounded-lg outline-none focus:border-amber-500 text-sm" />
+                           <button onClick={() => { const inputEl = document.getElementById('newBangunanKey'); const val = inputEl.value.trim(); if(val) { setTempData({...tempData, [activeBangunanTab]: [...(tempData[activeBangunanTab]||[]), {name: val, jumlah: 0}]}); inputEl.value = ''; } }} className="w-full sm:w-auto bg-amber-500 text-white px-4 py-2 sm:py-0 rounded-lg font-bold hover:bg-amber-600 transition text-sm">Tambah</button>
                         </div>
                      </div>
                      <button onClick={() => handleSaveProfilData('bangunan')} className="w-full mt-4 bg-amber-600 text-white font-bold py-3.5 rounded-lg hover:bg-amber-700 transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30"><Save size={18}/> Simpan Data Bangunan</button>
@@ -685,13 +785,13 @@ export default function AdminDashboard() {
                         {/* TAB 1: WILAYAH & BATAS */}
                         {activeGeoTab === 'wilayah' && (
                           <div className="space-y-6 animate-fade-in">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div><label className="font-bold text-gray-700 block mb-1">Total Luas Desa</label><input type="text" placeholder="Cth: 95,09 HA" className="w-full border p-2.5 rounded-lg focus:border-rose-500 outline-none" value={tempData.luas_total} onChange={e=>setTempData({...tempData, luas_total: e.target.value})} /></div>
                               <div><label className="font-bold text-gray-700 block mb-1">Lahan Belum Dimanfaatkan</label><input type="text" placeholder="Cth: 1 HA" className="w-full border p-2.5 rounded-lg focus:border-rose-500 outline-none" value={tempData.luas_belum} onChange={e=>setTempData({...tempData, luas_belum: e.target.value})} /></div>
                             </div>
                             <div>
                               <h4 className="font-bold text-gray-900 border-b pb-2 mb-4">Batas Wilayah Teritorial</h4>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className="font-bold text-gray-700 block mb-1 text-xs uppercase">Batas Utara</label><input type="text" className="w-full border p-2.5 rounded-lg focus:border-rose-500 outline-none" value={tempData.utara} onChange={e=>setTempData({...tempData, utara: e.target.value})} /></div>
                                 <div><label className="font-bold text-gray-700 block mb-1 text-xs uppercase">Batas Selatan</label><input type="text" className="w-full border p-2.5 rounded-lg focus:border-rose-500 outline-none" value={tempData.selatan} onChange={e=>setTempData({...tempData, selatan: e.target.value})} /></div>
                                 <div><label className="font-bold text-gray-700 block mb-1 text-xs uppercase">Batas Timur</label><input type="text" className="w-full border p-2.5 rounded-lg focus:border-rose-500 outline-none" value={tempData.timur} onChange={e=>setTempData({...tempData, timur: e.target.value})} /></div>
@@ -706,10 +806,10 @@ export default function AdminDashboard() {
                            <div className="space-y-4 animate-fade-in flex flex-col h-full">
                               <div className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-[250px] p-1">
                                  {tempData[activeGeoTab]?.map((item, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                    <div key={idx} className="flex items-center gap-2 md:gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
                                        <div className="flex-1">
                                          <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Nama Kategori</label>
-                                         <input className="w-full border p-2 rounded-lg outline-none focus:border-rose-500 font-semibold text-gray-800" value={item.name} placeholder="Cth: Sawah"
+                                         <input className="w-full border p-2 rounded-lg outline-none focus:border-rose-500 font-semibold text-gray-800 text-xs md:text-sm" value={item.name} placeholder="Cth: Sawah"
                                             onChange={e => {
                                                const newArr = [...tempData[activeGeoTab]];
                                                newArr[idx] = { ...newArr[idx], name: e.target.value };
@@ -717,9 +817,9 @@ export default function AdminDashboard() {
                                             }} 
                                          />
                                        </div>
-                                       <div className="w-32">
+                                       <div className="w-24 md:w-32">
                                          <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Luas / Nilai</label>
-                                         <input type="text" className="w-full border p-2 rounded-lg outline-none focus:border-rose-500 text-center font-bold text-gray-800" value={item.value} placeholder="- HA"
+                                         <input type="text" className="w-full border p-2 rounded-lg outline-none focus:border-rose-500 text-center font-bold text-gray-800 text-xs md:text-sm" value={item.value} placeholder="- HA"
                                             onChange={e => {
                                                const newArr = [...tempData[activeGeoTab]];
                                                newArr[idx] = { ...newArr[idx], value: e.target.value };
@@ -727,7 +827,7 @@ export default function AdminDashboard() {
                                             }} 
                                          />
                                        </div>
-                                       <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition"
+                                       <button title="Hapus Baris" className="mt-5 bg-red-50 text-red-500 p-2 md:p-2.5 rounded-lg hover:bg-red-500 hover:text-white transition"
                                           onClick={() => {
                                              const newArr = tempData[activeGeoTab].filter((_, i) => i !== idx);
                                              setTempData({...tempData, [activeGeoTab]: newArr});
@@ -758,22 +858,22 @@ export default function AdminDashboard() {
                    <div className="space-y-6 font-inter text-sm">
                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <h4 className="font-bold text-gray-900 mb-3 text-sm">Tambah Kontak Baru</h4>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                            <input type="text" placeholder="Nama Orang/Instansi" className="border p-2 rounded-lg outline-none focus:border-black" value={formKontak.nama} onChange={e=>setFormKontak({...formKontak, nama: e.target.value})}/>
                            <input type="text" placeholder="Peran/Jabatan" className="border p-2 rounded-lg outline-none focus:border-black" value={formKontak.peran} onChange={e=>setFormKontak({...formKontak, peran: e.target.value})}/>
                            <input type="text" placeholder="No. Telepon / WA" className="border p-2 rounded-lg outline-none focus:border-black" value={formKontak.nomor} onChange={e=>setFormKontak({...formKontak, nomor: e.target.value})}/>
                            <select className="border p-2 rounded-lg outline-none focus:border-black bg-white" value={formKontak.tipe} onChange={e=>setFormKontak({...formKontak, tipe: e.target.value})}><option value="wa">WhatsApp</option><option value="tel">Telepon Biasa</option></select>
-                           <select className="border p-2 rounded-lg outline-none focus:border-black bg-white col-span-2" value={formKontak.kategori} onChange={e=>setFormKontak({...formKontak, kategori: e.target.value})}><option value="pemerintahan">Pemerintahan Desa</option><option value="keamanan">Keamanan & Ketertiban</option><option value="kesehatan">Pusat Kesehatan</option><option value="darurat">Darurat / Bencana</option><option value="infrastruktur">Infrastruktur Publik</option></select>
+                           <select className="border p-2 rounded-lg outline-none focus:border-black bg-white sm:col-span-2" value={formKontak.kategori} onChange={e=>setFormKontak({...formKontak, kategori: e.target.value})}><option value="pemerintahan">Pemerintahan Desa</option><option value="keamanan">Keamanan & Ketertiban</option><option value="kesehatan">Pusat Kesehatan</option><option value="darurat">Darurat / Bencana</option><option value="infrastruktur">Infrastruktur Publik</option></select>
                         </div>
-                        <button onClick={handleAddKontak} className="bg-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 transition">Tambahkan ke Daftar</button>
+                        <button onClick={handleAddKontak} className="w-full sm:w-auto bg-black text-white px-6 py-2.5 rounded-lg font-bold hover:bg-gray-800 transition">Tambahkan ke Daftar</button>
                      </div>
                      <div>
                         <h4 className="font-bold text-gray-900 mb-3 text-sm border-b pb-2">Daftar Kontak Tersimpan</h4>
                         <ul className="space-y-3 max-h-[300px] overflow-y-auto">
                            {profilDesa.kontak.length === 0 ? <li className="text-gray-400 italic">Belum ada kontak.</li> : profilDesa.kontak.map((k) => (
                                <li key={k.id} className="flex justify-between items-center bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
-                                  <div><p className="font-bold text-gray-900">{k.nama} <span className="text-gray-400 font-medium text-xs">({k.peran})</span></p><p className="text-gray-600 text-xs mt-0.5">{k.nomor} - <span className="uppercase text-blue-500 font-bold">{k.tipe}</span></p></div>
-                                  <button onClick={() => handleDeleteKontak(k.id)} className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-50 hover:text-white transition"><Trash2 size={16}/></button>
+                                  <div className="flex-1 pr-2"><p className="font-bold text-gray-900 text-xs md:text-sm">{k.nama} <span className="text-gray-400 font-medium text-[10px] md:text-xs block sm:inline">({k.peran})</span></p><p className="text-gray-600 text-[10px] md:text-xs mt-0.5">{k.nomor} - <span className="uppercase text-blue-500 font-bold">{k.tipe}</span></p></div>
+                                  <button onClick={() => handleDeleteKontak(k.id)} className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-50 hover:text-white transition shrink-0"><Trash2 size={16}/></button>
                                </li>
                              ))
                            }
@@ -785,10 +885,10 @@ export default function AdminDashboard() {
                 {/* MODAL PENGADUAN DLL */}
                 {modalType === 'pengaduan' && (
                   <div className="space-y-5 text-sm">
-                    <div className="flex flex-wrap gap-3 mb-2"><div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-xs"><Calendar size={14}/> Masuk: {formatTanggal(selectedItem.created_at)}</div><div className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-xs"><Tag size={14}/> Kategori: {selectedItem.kategori_pengaduan || selectedItem.kategori}</div></div>
+                    <div className="flex flex-wrap gap-2 md:gap-3 mb-2"><div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Calendar size={14}/> Masuk: {formatTanggal(selectedItem.created_at)}</div><div className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Tag size={14}/> Kategori: {selectedItem.kategori_pengaduan || selectedItem.kategori}</div></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Identitas Pelapor</p><p className="text-gray-900 font-semibold">{selectedItem.is_anonim ? 'Anonim (Rahasia)' : selectedItem.nama_pelapor}</p></div><div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Kontak Telepon/WA</p><p className="text-gray-900 font-semibold">{selectedItem.is_anonim || !selectedItem.no_telepon ? '-' : selectedItem.no_telepon}</p></div></div>
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Lokasi Aduan</p><p className="text-gray-800 font-medium flex items-center gap-1.5"><MapPin size={14} className="text-red-500"/> {selectedItem.lokasi || '-'}</p></div>
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Laporan Pengaduan ({selectedItem.judul})</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line">{selectedItem.detail}</div></div>
+                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Lokasi Aduan</p><p className="text-gray-800 font-medium flex items-center gap-1.5"><MapPin size={14} className="text-red-500 shrink-0"/> <span className="truncate">{selectedItem.lokasi || '-'}</span></p></div>
+                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Laporan Pengaduan ({selectedItem.judul})</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line text-xs md:text-sm">{selectedItem.detail}</div></div>
                     
                     <div className="mt-2">
                       <p className="text-xs text-gray-400 uppercase tracking-wider mb-3 font-bold flex items-center gap-1.5"><ImageIcon size={14}/> Lampiran Bukti Warga</p>
@@ -806,10 +906,10 @@ export default function AdminDashboard() {
                       )}
                     </div>
                     <div className="mt-6 pt-6 border-t border-gray-200">
-                        <label className="text-sm font-bold text-gray-900 mb-2 block">Ubah Status Pengaduan:</label>
-                        <div className="flex gap-2">
+                        <label className="text-sm font-bold text-gray-900 mb-3 block">Ubah Status Pengaduan:</label>
+                        <div className="flex flex-wrap gap-2">
                             {['Menunggu', 'Diproses', 'Selesai'].map((statusOption) => (
-                            <button key={statusOption} onClick={() => handleUpdateStatus(selectedItem.id, statusOption)} disabled={loading || selectedItem.status === statusOption} className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 ${selectedItem.status === statusOption ? 'bg-black text-white cursor-default' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{statusOption}</button>
+                            <button key={statusOption} onClick={() => handleUpdateStatus(selectedItem.id, statusOption)} disabled={loading || selectedItem.status === statusOption} className={`flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold rounded-lg sm:rounded-full transition-all duration-200 ${selectedItem.status === statusOption ? 'bg-black text-white cursor-default shadow-md' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{statusOption}</button>
                             ))}
                         </div>
                     </div>
@@ -818,13 +918,13 @@ export default function AdminDashboard() {
                 
                 {modalType === 'informasi' && (
                   <div className="space-y-5 text-sm">
-                    <h4 className="text-lg font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
-                    <div className="flex flex-wrap gap-3 mb-2">
-                      <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-xs"><Calendar size={14}/> Dibuat: {formatTanggal(selectedItem.created_at)}</div>
-                      {selectedItem.waktu && <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-xs"><Clock size={14}/> Agenda: {new Date(selectedItem.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'})} WIB</div>}
+                    <h4 className="text-base md:text-lg font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
+                    <div className="flex flex-wrap gap-2 md:gap-3 mb-2">
+                      <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Calendar size={14}/> Dibuat: {formatTanggal(selectedItem.created_at)}</div>
+                      {selectedItem.waktu && <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Clock size={14}/> Agenda: {new Date(selectedItem.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'})} WIB</div>}
                     </div>
-                    {selectedItem.lokasi && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Lokasi Pelaksanaan</p><p className="text-gray-800 font-medium">{selectedItem.lokasi}</p></div>}
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Deskripsi Pengumuman</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line">{selectedItem.deskripsi}</div></div>
+                    {selectedItem.lokasi && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Lokasi Pelaksanaan</p><p className="text-gray-800 font-medium text-sm">{selectedItem.lokasi}</p></div>}
+                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Deskripsi Pengumuman</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line text-xs md:text-sm">{selectedItem.deskripsi}</div></div>
                     {selectedItem.gambar && (
                       <div className="mt-6">
                         <p className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-bold flex items-center gap-1.5"><ImageIcon size={14}/> Lampiran Poster/Gambar</p>
@@ -836,7 +936,7 @@ export default function AdminDashboard() {
 
                 {modalType === 'potensi' && (
                   <div className="space-y-5 text-sm">
-                    <h4 className="text-xl font-montserrat font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
+                    <h4 className="text-lg md:text-xl font-montserrat font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
                     <div className="w-full aspect-video bg-[#cecece] rounded-xl border border-gray-300 flex items-center justify-center overflow-hidden relative group">
                       {selectedItem.gambar_urls && selectedItem.gambar_urls.length > 0 ? (
                         <>
@@ -859,7 +959,7 @@ export default function AdminDashboard() {
                         <div className="text-gray-400 flex flex-col items-center"><ImageIcon size={44} className="mb-1" /> <span className="text-xs">Tidak Ada Gambar</span></div>
                       )}
                     </div>
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Uraian Potensi Desa</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line">{selectedItem.deskripsi}</div></div>
+                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Uraian Potensi Desa</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line text-xs md:text-sm">{selectedItem.deskripsi}</div></div>
                   </div>
                 )}
 
