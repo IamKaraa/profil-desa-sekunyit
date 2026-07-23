@@ -17,6 +17,9 @@ import DashboardAdmin from './Admin/dash-admin.jsx'
 import TambahInformasi from './Admin/tambah-informasi.jsx'
 import TambahPotensi from './Admin/tambah-potensi.jsx'
 import TambahGaleri from './Admin/tambah-galeri.jsx'
+import EditGaleri from './Admin/edit-galeri.jsx'
+import EditInformasi from './Admin/edit-informasi.jsx'
+import EditPotensi from './Admin/edit-potensi.jsx'
 
 // Import Halaman User (Ini sudah aman karena foldernya "pages" huruf kecil)
 import AdatBudayaUser from './pages/adat-budaya.jsx'
@@ -70,6 +73,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/admin/tambah-informasi" element={<TambahInformasi />} />
           <Route path="/admin/tambah-potensi" element={<TambahPotensi />} />
           <Route path="/admin/tambah-galeri" element={<TambahGaleri />} />
+          <Route path="/admin/edit-galeri/:id" element={<EditGaleri />} />
+          <Route path="/admin/edit-informasi/:id" element={<EditInformasi />} />
+          <Route path="/admin/edit-potensi/:id" element={<EditPotensi />} />
         </Route>
 
       </Routes>

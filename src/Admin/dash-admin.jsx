@@ -52,6 +52,9 @@ export default function AdminDashboard() {
   const [staffForm, setStaffForm] = useState({ email: '', nama_user: '', password: '', role: 'admin' });
   const [staffSubmitLoading, setStaffSubmitLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
+  
+  // State untuk menampung data Staf yang sedang diedit
+  const [editingStaff, setEditingStaff] = useState(null);
 
   const baseMenuItems = ["Pusat Pengaduan", "Informasi Desa", "Galeri Desa", "Potensi Desa", "Edit Konten"];
   const menuItems = adminProfile.role === 'super_admin' ? [...baseMenuItems, "Tambah Staff"] : baseMenuItems;
@@ -210,6 +213,7 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
+  // --- FUNGSI DELETE BARU ---
   const handleDeleteKontak = async (id) => {
     if(!window.confirm("Hapus kontak ini?")) return;
     const newKontakList = profilDesa.kontak.filter(k => k.id !== id);
@@ -219,12 +223,38 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
+  const handleDeleteInformasi = async (id) => {
+    if (!window.confirm("Hapus informasi ini beserta fotonya? Data yang terhapus tidak dapat dikembalikan.")) return;
+    setLoading(true);
+    await supabase.from('informasi_desa').delete().eq('id', id);
+    await refreshAllData();
+    setLoading(false);
+  };
+
   const handleDeletePotensi = async (id, e) => {
     e.stopPropagation(); 
-    if (window.confirm("Apakah Anda yakin ingin menghapus potensi desa ini?")) {
-        const { error } = await supabase.from('potensi_desa').delete().eq('id', id);
-        if (!error) { alert("Dihapus!"); await refreshAllData(); }
-    }
+    if (!window.confirm("Apakah Anda yakin ingin menghapus potensi desa ini?")) return;
+    setLoading(true);
+    await supabase.from('potensi_desa').delete().eq('id', id);
+    await refreshAllData();
+    setLoading(false);
+  };
+
+  const handleDeleteGaleri = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Hapus album galeri ini?")) return;
+    setLoading(true);
+    await supabase.from('galeri_desa').delete().eq('id', id);
+    await refreshAllData();
+    setLoading(false);
+  };
+
+  const handleDeleteStaff = async (id) => {
+    if (!window.confirm("Cabut hak akses admin untuk staf ini? Akun mereka tidak akan bisa login lagi.")) return;
+    setLoading(true);
+    await supabase.from('profil_admin').delete().eq('id', id);
+    await refreshAllData();
+    setLoading(false);
   };
 
   const handleUpdateStatus = async (id, newStatus) => {
@@ -249,7 +279,7 @@ export default function AdminDashboard() {
     if (type === 'edit_geografi') setActiveGeoTab('wilayah');
   };
   
-  const closeModal = () => { setSelectedItem(null); setModalType(null); setFullscreenImage(null); setTempData(null); };
+  const closeModal = () => { setSelectedItem(null); setModalType(null); setFullscreenImage(null); setTempData(null); setEditingStaff(null); };
 
   const jumpToInformasi = (informasiId) => {
     const infoData = informasiList.find(info => info.id === informasiId);
@@ -278,6 +308,25 @@ export default function AdminDashboard() {
     } finally {
       setStaffSubmitLoading(false);
     }
+  };
+
+  // --- FUNGSI EDIT STAF BARU ---
+  const handleSaveEditStaff = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.from('profil_admin').update({
+      nama_user: editingStaff.nama_user,
+      role: editingStaff.role
+    }).eq('id', editingStaff.id);
+    
+    if (error) {
+      alert("Gagal mengupdate staf: " + error.message);
+    } else {
+      alert("Hak Akses Staf berhasil diperbarui!");
+      closeModal();
+      await refreshAllData();
+    }
+    setLoading(false);
   };
 
   const formatTanggal = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
@@ -482,11 +531,12 @@ export default function AdminDashboard() {
                 <th className="px-4 md:px-6 py-4">Nama Pengguna</th>
                 <th className="px-4 md:px-6 py-4">Hak Akses</th>
                 <th className="px-4 md:px-6 py-4">Tgl Terdaftar</th>
+                <th className="px-4 md:px-6 py-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 whitespace-nowrap">
               {staffList.length === 0 ? (
-                <tr><td colSpan="3" className="text-center py-8 text-gray-400 italic">Belum ada data staf.</td></tr>
+                <tr><td colSpan="4" className="text-center py-8 text-gray-400 italic">Belum ada data staf.</td></tr>
               ) : (
                 staffList.map((staff) => (
                   <tr key={staff.id} className="hover:bg-gray-50">
@@ -497,6 +547,12 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-4 md:px-6 py-4 text-xs font-medium">{formatTanggal(staff.created_at)}</td>
+                    <td className="px-4 md:px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => { setEditingStaff(staff); setModalType('edit_staff'); }} title="Edit Hak Akses" className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"><Edit size={16} /></button>
+                        <button onClick={() => handleDeleteStaff(staff.id)} title="Hapus Staf" className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"><Trash2 size={16} /></button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -521,7 +577,13 @@ export default function AdminDashboard() {
                   <td className="px-4 md:px-6 py-4 uppercase text-xs"><span className={`px-2.5 py-1 rounded-md font-bold ${item.kategori_informasi === 'kegiatan' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>{item.kategori_informasi}</span></td>
                   <td className="px-4 md:px-6 py-4 truncate max-w-[120px] md:max-w-[150px]">{item.lokasi || '-'}</td>
                   <td className="px-4 md:px-6 py-4 text-xs font-medium text-gray-500">{formatTanggal(item.created_at)}</td>
-                  <td className="px-4 md:px-6 py-4 text-center"><button onClick={() => openModal(item, 'informasi')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={18} /></button></td>
+                  <td className="px-4 md:px-6 py-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => openModal(item, 'informasi')} title="Lihat" className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Eye size={16} /></button>
+                      <button onClick={() => navigate(`/admin/edit-informasi/${item.id}`)} title="Edit" className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"><Edit size={16} /></button>
+                      <button onClick={() => handleDeleteInformasi(item.id)} title="Hapus" className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                  </td>
                 </tr>
               ))
             }
@@ -592,11 +654,16 @@ export default function AdminDashboard() {
             <motion.div key={item.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} onClick={() => openModal(item, 'potensi')} className="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-zinc-800 bg-zinc-950 shadow-md flex flex-col justify-end group hover:scale-[1.02] transition-transform">
               {sampulPotensi ? <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${sampulPotensi})` }}></div> : <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 opacity-40"><ImageIcon size={40} className="text-gray-500" /></div>}
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative z-10 p-4 h-full flex flex-col justify-end">
+              
+              <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-90 group-hover:scale-100 z-20">
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/edit-potensi/${item.id}`); }} title="Edit" className="bg-emerald-600/90 hover:bg-emerald-600 text-white p-1.5 rounded-full shadow-md"><Edit size={14} /></button>
+                <button onClick={(e) => handleDeletePotensi(item.id, e)} title="Hapus" className="bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md"><Trash2 size={14} /></button>
+              </div>
+
+              <div className="relative z-10 p-4 h-full flex flex-col justify-end pointer-events-none">
                 <span className="text-[10px] bg-[#00bced] text-white font-bold px-2 py-0.5 rounded w-fit mb-1.5 uppercase">{(item.gambar_urls || []).length || 1} Foto</span>
                 <h4 className="text-white font-montserrat font-bold text-sm md:text-base leading-tight mb-1 truncate drop-shadow-md">{item.judul}</h4>
                 <p className="text-gray-300 text-xs font-normal leading-normal line-clamp-2 drop-shadow-sm">{item.deskripsi}</p>
-                <button onClick={(e) => handleDeletePotensi(item.id, e)} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-90 group-hover:scale-100 shadow-md"><Trash2 size={14} /></button>
               </div>
             </motion.div>
           );
@@ -613,7 +680,16 @@ export default function AdminDashboard() {
             <motion.div key={item.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} onClick={() => openModal(item, 'galeri')} className="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-zinc-800 bg-zinc-950 shadow-md flex flex-col justify-end group hover:scale-[1.02] transition-transform">
               {coverImg ? <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${coverImg})` }}></div> : <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 opacity-40"><ImageIcon size={40} className="text-gray-500" /></div>}
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative z-10 p-4 h-full flex flex-col justify-end">
+              
+              {/* Tombol Aksi (Hanya muncul jika sumber galeri murni, bukan dari Info) */}
+              {item.source !== 'informasi' && (
+                <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-90 group-hover:scale-100 z-20">
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/edit-galeri/${item.id}`); }} title="Edit" className="bg-emerald-600/90 hover:bg-emerald-600 text-white p-1.5 rounded-full shadow-md"><Edit size={14} /></button>
+                  <button onClick={(e) => handleDeleteGaleri(item.id, e)} title="Hapus" className="bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md"><Trash2 size={14} /></button>
+                </div>
+              )}
+
+              <div className="relative z-10 p-4 h-full flex flex-col justify-end pointer-events-none">
                 <div className="flex gap-2 mb-1.5 flex-wrap">
                   <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded uppercase">{(item.gambar_urls || []).length || 1} Foto</span>
                   {item.source === 'informasi' && <span className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1"><ExternalLink size={10} /> Info</span>}
@@ -694,7 +770,8 @@ export default function AdminDashboard() {
                    modalType === 'edit_kependudukan_detail' ? 'Edit Demografi Kependudukan' :
                    modalType === 'edit_bangunan' ? 'Kelola Fasilitas Bangunan' :
                    modalType === 'edit_geografi' ? 'Kelola Data Geografi' :
-                   modalType === 'edit_kontak' ? 'Manajemen Kontak Darurat' : 'Rincian Informasi'}
+                   modalType === 'edit_kontak' ? 'Manajemen Kontak Darurat' : 
+                   modalType === 'edit_staff' ? 'Edit Hak Akses Staf' : 'Rincian Informasi'}
                 </h3>
                 <button onClick={closeModal} className={`p-2 rounded-full shrink-0 transition-colors ${modalType === 'galeri' ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}><X size={20} /></button>
               </div>
@@ -880,6 +957,27 @@ export default function AdminDashboard() {
                         </ul>
                      </div>
                    </div>
+                )}
+
+                {/* 5. Modal Edit Staf */}
+                {modalType === 'edit_staff' && editingStaff && (
+                   <form onSubmit={handleSaveEditStaff} className="space-y-4 font-inter text-sm">
+                      <div>
+                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Pengguna</label>
+                         <input type="text" required value={editingStaff.nama_user} onChange={e => setEditingStaff({...editingStaff, nama_user: e.target.value})} className="w-full border p-2.5 rounded-lg focus:border-black outline-none bg-gray-50" />
+                      </div>
+                      <div>
+                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Hak Akses (Role)</label>
+                         <select value={editingStaff.role} onChange={e => setEditingStaff({...editingStaff, role: e.target.value})} className="w-full border p-2.5 rounded-lg focus:border-black outline-none bg-white cursor-pointer font-bold">
+                           <option value="admin">Admin Biasa</option>
+                           <option value="super_admin">Super Admin</option>
+                         </select>
+                         <p className="text-[11px] text-gray-500 mt-1">*Super Admin memiliki akses penuh untuk menambah dan menghapus staf.</p>
+                      </div>
+                      <button type="submit" disabled={loading} className="w-full mt-4 bg-emerald-600 text-white font-bold py-3.5 rounded-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                         {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18}/>} Simpan Perubahan Staf
+                      </button>
+                   </form>
                 )}
 
                 {/* MODAL PENGADUAN DLL */}
