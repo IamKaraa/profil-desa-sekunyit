@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Upload, Loader2, AlertCircle } from 'lucide-react';
-import { supabase } from '../config/supabaseClient'; // Pastikan path ini benar
+import { ChevronDown, Upload, Loader2, AlertCircle, X } from 'lucide-react';
+import { supabase } from '../config/supabaseClient';
 
 export default function TambahInformasi() {
   const navigate = useNavigate();
@@ -17,8 +17,10 @@ export default function TambahInformasi() {
   });
   
   const [isKegiatan, setIsKegiatan] = useState(false);
-  const [foto, setFoto] = useState(null);
-  const [fotoPreview, setFotoPreview] = useState(null);
+  
+  // Perubahan: State untuk Banyak Foto
+  const [fotos, setFotos] = useState([]); // Array file asli
+  const [previews, setPreviews] = useState([]); // Array preview URL
   
   // State Loading & Notifikasi
   const [loading, setLoading] = useState(false);
@@ -28,12 +30,21 @@ export default function TambahInformasi() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handler Pilih Banyak File
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFoto(file);
-      setFotoPreview(URL.createObjectURL(file)); // Buat preview gambar
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setFotos(prev => [...prev, ...files]);
+      
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setPreviews(prev => [...prev, ...newPreviews]);
     }
+  };
+
+  // Handler Hapus Salah Satu Foto Sebelum Upload
+  const removeFoto = (index) => {
+    setFotos(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -46,26 +57,34 @@ export default function TambahInformasi() {
         throw new Error("Judul, Kategori, dan Detail Informasi wajib diisi!");
       }
 
-      let fotoUrl = null;
+      let uploadedUrls = [];
 
-      // 1. Jika ada foto, upload dulu ke Supabase Storage (Bucket: 'informasi_desa')
-      if (foto) {
-        const fileExt = foto.name.split('.').pop();
-        const fileName = `info_${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('informasi_desa') // Pastikan Anda sudah membuat bucket ini di Supabase!
-          .upload(fileName, foto);
-
-        if (uploadError) throw uploadError;
-
-        // Ambil URL Publik gambar tersebut
-        const { data: publicUrlData } = supabase.storage
-          .from('informasi_desa')
-          .getPublicUrl(fileName);
+      // 1. Upload semua file foto ke bucket 'informasi_desa' secara paralel
+      if (fotos.length > 0) {
+        const uploadPromises = fotos.map(async (foto) => {
+          const fileExt = foto.name.split('.').pop();
+          const fileName = `info_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
           
-        fotoUrl = publicUrlData.publicUrl;
+          const { error: uploadError } = await supabase.storage
+            .from('informasi_desa')
+            .upload(fileName, foto);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabase.storage
+            .from('informasi_desa')
+            .getPublicUrl(fileName);
+            
+          return publicUrlData.publicUrl;
+        });
+
+        uploadedUrls = await Promise.all(uploadPromises);
       }
+
+      // PERBAIKAN ZONA WAKTU: Tambahkan offset +07:00 (WIB) agar tidak dianggap UTC
+      const waktuLokal = isKegiatan && formData.waktu 
+        ? `${formData.waktu}:00+07:00` 
+        : null;
 
       // 2. Simpan semua data ke tabel informasi_desa
       const { error: insertError } = await supabase
@@ -75,8 +94,9 @@ export default function TambahInformasi() {
           kategori_informasi: formData.kategori_informasi,
           lokasi: formData.lokasi || null,
           deskripsi: formData.deskripsi,
-          waktu: isKegiatan && formData.waktu ? formData.waktu : null,
-          gambar: fotoUrl
+          waktu: waktuLokal, // Simpan dengan zona waktu yang benar
+          gambar_urls: uploadedUrls, // Simpan seluruh URL jika ada kolom ini
+          gambar: uploadedUrls.length > 0 ? uploadedUrls[0] : null // Fallback kompatibilitas
         }]);
 
       if (insertError) throw insertError;
@@ -175,22 +195,40 @@ export default function TambahInformasi() {
                 )}
               </AnimatePresence>
 
-              {/* Foto Pendukung */}
+              {/* Unggah Foto Pendukung Multi */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-gray-900 ml-2">Foto Pendukung (Opsional)</label>
+                <label className="text-sm font-bold text-gray-900 ml-2">Foto Pendukung (Bisa Lebih dari 1)</label>
                 <div className="relative cursor-pointer group">
-                  <input type="file" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" />
+                  <input type="file" onChange={handleFileChange} multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" />
                   <div className="w-full border border-black rounded-full px-5 py-2.5 bg-transparent text-sm font-medium text-gray-400 group-hover:bg-black/5 transition-colors flex items-center justify-between overflow-hidden">
-                    <span className="truncate">{foto ? foto.name : 'Import Foto'}</span>
+                    <span>Pilih foto-foto pendukung</span>
                     <Upload size={16} className="text-black shrink-0 ml-2" />
                   </div>
                 </div>
-                {/* Preview Foto */}
-                {fotoPreview && (
-                  <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
+                
+                {/* Grid Preview Foto Terpilih */}
+                <AnimatePresence>
+                  {previews.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2"
+                    >
+                      {previews.map((src, index) => (
+                        <div key={index} className="relative aspect-video rounded-xl overflow-hidden border border-gray-300 group shadow-sm bg-gray-100">
+                          <img src={src} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeFoto(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Error Message */}
@@ -213,12 +251,12 @@ export default function TambahInformasi() {
           {/* KOLOM KANAN (Panduan/Tata Cara) */}
           <div className="w-full lg:w-[40%] h-[500px] lg:h-auto">
             <div className="border border-black rounded-[1.5rem] p-6 h-full flex flex-col bg-transparent">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Tata Cara Pengaduan :</h3>
+              <h3 className="text-sm font-bold text-gray-900 mb-4">Tata Cara Pengumuman :</h3>
               <div className="flex-1 text-sm font-medium text-gray-500 overflow-y-auto">
                 <p className="mb-2">1. Pastikan judul informasi jelas dan mewakili isi konten.</p>
                 <p className="mb-2">2. Pilih kategori yang paling sesuai agar warga mudah melakukan pencarian.</p>
                 <p className="mb-2">3. Jika konten ini berupa kegiatan desa, aktifkan *toggle* <strong>Kegiatan Desa</strong> menjadi <strong>"Iya"</strong> dan isi waktu pelaksanaannya.</p>
-                <p className="mb-2">4. Foto pendukung bersifat opsional, usahakan rasio foto 16:9 (Landscape) untuk tampilan terbaik di aplikasi warga.</p>
+                <p className="mb-2">4. Anda kini dapat <strong>mengunggah banyak foto sekaligus</strong> untuk memperlengkap bukti kegiatan atau pengumuman Anda.</p>
               </div>
             </div>
           </div>

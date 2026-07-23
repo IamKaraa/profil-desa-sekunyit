@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Calendar, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Clock, MapPin, Calendar, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
 
 const formatTanggal = (dateString) => {
@@ -16,6 +16,10 @@ export default function DetailInformasiUser() {
   
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // State untuk Slider Gambar & Fullscreen
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -57,6 +61,13 @@ export default function DetailInformasiUser() {
       </div>
     );
   }
+
+  // Logika pengambilan gambar (Mendukung array URL baru atau format gambar tunggal lama)
+  const images = data.gambar_urls && data.gambar_urls.length > 0 
+    ? data.gambar_urls 
+    : (data.gambar ? [data.gambar] : []);
+    
+  const hasImages = images.length > 0;
 
   return (
     <div className="min-h-screen bg-[#f4f8f9] font-inter pb-20">
@@ -101,10 +112,55 @@ export default function DetailInformasiUser() {
             )}
           </div>
 
-          {/* Area Gambar Besar */}
-          {data.gambar ? (
-            <div className="w-full aspect-video rounded-2xl mb-8 shadow-sm overflow-hidden bg-gray-100">
-              <img src={data.gambar} alt={data.judul} className="w-full h-full object-cover" />
+          {/* Area Gambar Slider / Tunggal */}
+          {hasImages ? (
+            <div className="relative w-full aspect-video rounded-2xl mb-8 shadow-sm overflow-hidden bg-black group">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  src={images[currentImageIndex]}
+                  alt={`${data.judul} - Gambar ${currentImageIndex + 1}`}
+                  className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setFullscreenImage(images[currentImageIndex])}
+                />
+              </AnimatePresence>
+
+              {/* Tombol Navigasi Slider (Muncul jika foto > 1) */}
+              {images.length > 1 && (
+                <>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1)); }} 
+                    className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1)); }} 
+                    className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                  
+                  {/* Indikator Titik (Dots) */}
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                    {images.map((_, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }}
+                        className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`} 
+                        aria-label={`Lihat gambar ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+              <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md pointer-events-none">
+                {currentImageIndex + 1} / {images.length}
+              </div>
             </div>
           ) : (
             <div className="w-full aspect-video bg-[#222222] rounded-2xl flex flex-col items-center justify-center mb-8 shadow-inner overflow-hidden">
@@ -121,6 +177,30 @@ export default function DetailInformasiUser() {
           </div>
         </motion.article>
       </main>
+
+      {/* Lightbox / Gambar Fullscreen */}
+      <AnimatePresence>
+        {fullscreenImage && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm"
+            onClick={() => setFullscreenImage(null)}
+          >
+            <button className="absolute top-6 right-6 text-white hover:text-gray-300 p-2 rounded-full bg-white/10 hover:bg-red-500 transition-colors backdrop-blur-md z-50">
+              <X size={32} />
+            </button>
+            <motion.img 
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.9 }} 
+              src={fullscreenImage} 
+              alt="Layar Penuh" 
+              className="max-w-full max-h-full object-contain drop-shadow-2xl" 
+              onClick={(e) => e.stopPropagation()} 
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

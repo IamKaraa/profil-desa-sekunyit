@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Upload, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronDown, Upload, Loader2, AlertCircle, X } from 'lucide-react';
 import { supabase } from '../config/supabaseClient';
 
 export default function EditInformasi() {
@@ -18,9 +18,11 @@ export default function EditInformasi() {
   });
   
   const [isKegiatan, setIsKegiatan] = useState(false);
-  const [foto, setFoto] = useState(null); // Menyimpan file foto baru jika diubah
-  const [fotoPreview, setFotoPreview] = useState(null); // Preview gambar
-  const [existingFotoUrl, setExistingFotoUrl] = useState(null); // URL gambar lama
+  
+  // Perubahan: State untuk Foto Banyak (Multi)
+  const [existingUrls, setExistingUrls] = useState([]); // URL foto lama dari database
+  const [newFotos, setNewFotos] = useState([]); // Array file asli baru
+  const [newPreviews, setNewPreviews] = useState([]); // Array preview url blob baru
   
   // State Loading & Notifikasi
   const [initialLoading, setInitialLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function EditInformasi() {
         if (error) throw error;
 
         if (data) {
-          // Format tanggal untuk input datetime-local (YYYY-MM-DDThh:mm)
+          // Format tanggal untuk input datetime-local (Hanya ambil YYYY-MM-DDThh:mm)
           const formatWaktu = data.waktu ? data.waktu.slice(0, 16) : '';
 
           setFormData({
@@ -57,10 +59,11 @@ export default function EditInformasi() {
             setIsKegiatan(true);
           }
 
-          // Cek apakah punya gambar lama
-          if (data.gambar) {
-            setFotoPreview(data.gambar);
-            setExistingFotoUrl(data.gambar);
+          // Cek array gambar lama, fallback ke gambar tunggal jika array kosong
+          if (data.gambar_urls && data.gambar_urls.length > 0) {
+            setExistingUrls(data.gambar_urls);
+          } else if (data.gambar) {
+            setExistingUrls([data.gambar]);
           }
         }
       } catch (err) {
@@ -77,12 +80,25 @@ export default function EditInformasi() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handler pilih banyak file BARU
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFoto(file);
-      setFotoPreview(URL.createObjectURL(file)); // Buat preview gambar lokal baru
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setNewFotos(prev => [...prev, ...files]);
+      const previews = files.map(file => URL.createObjectURL(file));
+      setNewPreviews(prev => [...prev, ...previews]);
     }
+  };
+
+  // Hapus foto lama (yang sudah ada di DB)
+  const removeExistingFoto = (indexToRemove) => {
+    setExistingUrls(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Hapus foto baru (yang belum diupload)
+  const removeNewFoto = (indexToRemove) => {
+    setNewFotos(prev => prev.filter((_, i) => i !== indexToRemove));
+    setNewPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -95,26 +111,35 @@ export default function EditInformasi() {
         throw new Error("Judul, Kategori, dan Detail Informasi wajib diisi!");
       }
 
-      let fotoUrl = existingFotoUrl; // Default gunakan URL gambar lama
+      let finalUrls = [...existingUrls];
 
       // 1. Jika ada foto BARU yang diupload, simpan ke Supabase Storage
-      if (foto) {
-        const fileExt = foto.name.split('.').pop();
-        const fileName = `info_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('informasi_desa')
-          .upload(fileName, foto);
-
-        if (uploadError) throw uploadError;
-
-        // Ambil URL Publik gambar baru tersebut
-        const { data: publicUrlData } = supabase.storage
-          .from('informasi_desa')
-          .getPublicUrl(fileName);
+      if (newFotos.length > 0) {
+        const uploadPromises = newFotos.map(async (foto) => {
+          const fileExt = foto.name.split('.').pop();
+          const fileName = `info_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
           
-        fotoUrl = publicUrlData.publicUrl;
+          const { error: uploadError } = await supabase.storage
+            .from('informasi_desa')
+            .upload(fileName, foto);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabase.storage
+            .from('informasi_desa')
+            .getPublicUrl(fileName);
+            
+          return publicUrlData.publicUrl;
+        });
+
+        const uploadedUrls = await Promise.all(uploadPromises);
+        finalUrls = [...finalUrls, ...uploadedUrls]; // Gabungkan URL lama dan baru
       }
+
+      // PERBAIKAN ZONA WAKTU: Tambahkan offset +07:00 (WIB) agar tidak dianggap UTC
+      const waktuLokal = isKegiatan && formData.waktu 
+        ? `${formData.waktu}:00+07:00` 
+        : null;
 
       // 2. Update data ke tabel informasi_desa
       const { error: updateError } = await supabase
@@ -124,8 +149,9 @@ export default function EditInformasi() {
           kategori_informasi: formData.kategori_informasi,
           lokasi: formData.lokasi || null,
           deskripsi: formData.deskripsi,
-          waktu: isKegiatan && formData.waktu ? formData.waktu : null,
-          gambar: fotoUrl
+          waktu: waktuLokal, // Simpan dengan zona waktu yang benar (WIB)
+          gambar_urls: finalUrls,
+          gambar: finalUrls.length > 0 ? finalUrls[0] : null // Fallback
         })
         .eq('id', id);
 
@@ -187,6 +213,7 @@ export default function EditInformasi() {
                     <option value="pengumuman">Pengumuman</option>
                     <option value="kegiatan">Kegiatan Warga</option>
                     <option value="bantuan">Bantuan Sosial</option>
+                    <option value="lainnya">Lain Lainnya</option>
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-black"><ChevronDown size={18} /></div>
                 </div>
@@ -234,23 +261,60 @@ export default function EditInformasi() {
                 )}
               </AnimatePresence>
 
-              {/* Foto Pendukung */}
+              {/* Unggah Foto Pendukung Multi */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-gray-900 ml-2">Foto Pendukung (Ganti Foto)</label>
+                <label className="text-sm font-bold text-gray-900 ml-2">Kelola Foto Pendukung</label>
                 <div className="relative cursor-pointer group">
-                  <input type="file" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" />
+                  <input type="file" onChange={handleFileChange} multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" />
                   <div className="w-full border border-black rounded-full px-5 py-2.5 bg-transparent text-sm font-medium text-gray-400 group-hover:bg-black/5 transition-colors flex items-center justify-between overflow-hidden">
-                    <span className="truncate">{foto ? foto.name : 'Pilih untuk mengubah foto'}</span>
+                    <span>Klik untuk menambah foto baru</span>
                     <Upload size={16} className="text-black shrink-0 ml-2" />
                   </div>
                 </div>
-                {/* Preview Foto (Baik yang lama maupun yang baru dipilih) */}
-                {fotoPreview && (
-                  <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-gray-200 relative">
-                    <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute top-1 left-1 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded font-bold">{foto ? 'Foto Baru' : 'Foto Saat Ini'}</div>
-                  </div>
-                )}
+                
+                {/* Grid Preview Foto Tersimpan & Baru */}
+                <AnimatePresence>
+                  {(existingUrls.length > 0 || newPreviews.length > 0) && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      exit={{ opacity: 0 }} 
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3"
+                    >
+                      {/* Render Foto Lama */}
+                      {existingUrls.map((url, index) => (
+                        <div key={`old-${index}`} className="relative aspect-video rounded-xl overflow-hidden border border-gray-300 group shadow-sm bg-gray-100">
+                          <div className="absolute top-1 left-1 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded font-bold z-10">Tersimpan</div>
+                          <img src={url} alt={`Saved ${index}`} className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeExistingFoto(index)}
+                            title="Hapus Foto Ini"
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors z-10"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Render Foto Baru */}
+                      {newPreviews.map((src, index) => (
+                        <div key={`new-${index}`} className="relative aspect-video rounded-xl overflow-hidden border-2 border-emerald-400 group shadow-sm bg-gray-100">
+                          <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[9px] px-2 py-0.5 rounded font-bold z-10">Baru</div>
+                          <img src={src} alt={`New Preview ${index}`} className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeNewFoto(index)}
+                            title="Batal Tambah"
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors z-10"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Error Message */}
@@ -274,11 +338,11 @@ export default function EditInformasi() {
           <div className="w-full lg:w-[40%] h-[500px] lg:h-auto">
             <div className="border border-black rounded-[1.5rem] p-6 h-full flex flex-col bg-transparent">
               <h3 className="text-sm font-bold text-gray-900 mb-4">Mode Edit Informasi :</h3>
-              <div className="flex-1 text-sm font-medium text-gray-500 overflow-y-auto">
-                <p className="mb-2">1. Anda dapat mengubah isi informasi yang telah dipublikasikan sebelumnya.</p>
-                <p className="mb-2">2. Jika Anda tidak memilih foto baru, maka sistem akan menggunakan foto dokumentasi yang lama.</p>
-                <p className="mb-2">3. Jika Anda mengganti opsi <strong>Kegiatan Desa</strong> menjadi <strong>"Tidak"</strong>, maka data jadwal waktu yang lama akan otomatis dihapus oleh sistem.</p>
-                <p className="mb-2">4. Pastikan untuk menekan tombol "Simpan Perubahan" agar data terbaru terkirim ke database warga.</p>
+              <div className="flex-1 text-sm font-medium text-gray-500 overflow-y-auto space-y-3">
+                <p>1. Anda dapat mengubah isi informasi yang telah dipublikasikan sebelumnya.</p>
+                <p>2. Anda bisa <strong>menghapus foto lama</strong> dengan menekan tombol silang (X) merah pada foto yang bertanda "Tersimpan".</p>
+                <p>3. Jika Anda mengganti opsi <strong>Kegiatan Desa</strong> menjadi <strong>"Tidak"</strong>, maka data jadwal waktu yang lama akan otomatis dihapus oleh sistem.</p>
+                <p>4. Pastikan untuk menekan tombol "Simpan Perubahan" agar data terbaru terkirim ke database warga.</p>
               </div>
             </div>
           </div>

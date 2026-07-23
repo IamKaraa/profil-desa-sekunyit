@@ -95,8 +95,13 @@ export default function AdminDashboard() {
     
     if (resGaleri.data && resInformasi.data) {
       const galeriMurni = resGaleri.data.map(g => ({ ...g, source: 'galeri' }));
-      const galeriDariInfo = resInformasi.data.filter(info => info.gambar).map(info => ({
-        id: `info-${info.id}`, judul: info.judul, gambar_urls: [info.gambar], created_at: info.created_at, source: 'informasi', infoId: info.id 
+      const galeriDariInfo = resInformasi.data.filter(info => info.gambar || (info.gambar_urls && info.gambar_urls.length > 0)).map(info => ({
+        id: `info-${info.id}`, 
+        judul: info.judul, 
+        gambar_urls: info.gambar_urls && info.gambar_urls.length > 0 ? info.gambar_urls : [info.gambar], 
+        created_at: info.created_at, 
+        source: 'informasi', 
+        infoId: info.id 
       }));
       setGaleriList([...galeriMurni, ...galeriDariInfo].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
     }
@@ -213,7 +218,6 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  // --- FUNGSI DELETE BARU ---
   const handleDeleteKontak = async (id) => {
     if(!window.confirm("Hapus kontak ini?")) return;
     const newKontakList = profilDesa.kontak.filter(k => k.id !== id);
@@ -283,7 +287,7 @@ export default function AdminDashboard() {
 
   const jumpToInformasi = (informasiId) => {
     const infoData = informasiList.find(info => info.id === informasiId);
-    if (infoData) { setSelectedItem(infoData); setModalType('informasi'); }
+    if (infoData) { setSelectedItem(infoData); setModalType('informasi'); setCurrentImageIndex(0); }
   };
 
   const handleCreateStaff = async (e) => {
@@ -310,7 +314,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- FUNGSI EDIT STAF BARU ---
   const handleSaveEditStaff = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -1014,23 +1017,46 @@ export default function AdminDashboard() {
                   </div>
                 )}
                 
-                {modalType === 'informasi' && (
-                  <div className="space-y-5 text-sm">
-                    <h4 className="text-base md:text-lg font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
-                    <div className="flex flex-wrap gap-2 md:gap-3 mb-2">
-                      <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Calendar size={14}/> Dibuat: {formatTanggal(selectedItem.created_at)}</div>
-                      {selectedItem.waktu && <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Clock size={14}/> Agenda: {new Date(selectedItem.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'})} WIB</div>}
-                    </div>
-                    {selectedItem.lokasi && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Lokasi Pelaksanaan</p><p className="text-gray-800 font-medium text-sm">{selectedItem.lokasi}</p></div>}
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Deskripsi Pengumuman</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line text-xs md:text-sm">{selectedItem.deskripsi}</div></div>
-                    {selectedItem.gambar && (
-                      <div className="mt-6">
-                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-bold flex items-center gap-1.5"><ImageIcon size={14}/> Lampiran Poster/Gambar</p>
-                        <div className="w-full aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50"><img src={selectedItem.gambar} alt="Lampiran Media" className="w-full h-full object-contain" /></div>
+                {modalType === 'informasi' && (() => {
+                  const hasImages = (selectedItem.gambar_urls && selectedItem.gambar_urls.length > 0) || selectedItem.gambar;
+                  return (
+                    <div className="space-y-5 text-sm">
+                      <h4 className="text-base md:text-lg font-bold text-gray-900 leading-tight">{selectedItem.judul}</h4>
+                      <div className="flex flex-wrap gap-2 md:gap-3 mb-2">
+                        <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Calendar size={14}/> Dibuat: {formatTanggal(selectedItem.created_at)}</div>
+                        {selectedItem.waktu && <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium text-[10px] md:text-xs"><Clock size={14}/> Agenda: {new Date(selectedItem.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'})} WIB</div>}
                       </div>
-                    )}
-                  </div>
-                )}
+                      {selectedItem.lokasi && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 font-bold">Lokasi Pelaksanaan</p><p className="text-gray-800 font-medium text-sm">{selectedItem.lokasi}</p></div>}
+                      <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Isi Deskripsi Pengumuman</p><div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 leading-relaxed text-justify whitespace-pre-line text-xs md:text-sm">{selectedItem.deskripsi}</div></div>
+                      
+                      {hasImages && (
+                        <div className="mt-6">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-bold flex items-center gap-1.5"><ImageIcon size={14}/> Lampiran Poster/Gambar</p>
+                          <div className="w-full aspect-video bg-[#cecece] rounded-xl border border-gray-300 flex items-center justify-center overflow-hidden relative group">
+                            {selectedItem.gambar_urls && selectedItem.gambar_urls.length > 0 ? (
+                              <>
+                                <img src={selectedItem.gambar_urls[currentImageIndex]} alt={selectedItem.judul} className="w-full h-full object-contain bg-black/90" />
+                                {selectedItem.gambar_urls.length > 1 && (
+                                  <>
+                                    <button onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? selectedItem.gambar_urls.length - 1 : prev - 1))} className="absolute left-3 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition-all"><ChevronLeft size={18} /></button>
+                                    <button onClick={() => setCurrentImageIndex((prev) => (prev === selectedItem.gambar_urls.length - 1 ? 0 : prev + 1))} className="absolute right-3 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition-all"><ChevronRight size={18} /></button>
+                                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                                      {selectedItem.gambar_urls.map((_, idx) => (
+                                        <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`} />
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                               <img src={selectedItem.gambar} alt="Lampiran Media" className="w-full h-full object-contain bg-black/90" />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {modalType === 'potensi' && (
                   <div className="space-y-5 text-sm">
