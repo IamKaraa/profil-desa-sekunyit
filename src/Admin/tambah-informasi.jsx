@@ -127,6 +127,7 @@ export default function TambahInformasi() {
                     <option value="pengumuman">Pengumuman</option>
                     <option value="kegiatan">Kegiatan Warga</option>
                     <option value="bantuan">Bantuan Sosial</option>
+                    <option value="lainnya">Lain Lainnya</option>
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-black"><ChevronDown size={18} /></div>
                 </div>
